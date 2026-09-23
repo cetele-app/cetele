@@ -217,6 +217,12 @@
   .browser-tip ul { margin: 6px 0 6px; padding-left: 18px; }
   .browser-tip li { margin-bottom: 4px; }
   .fb-quote { font-style: italic; color: var(--accent); font-size: 14.5px; line-height: 1.5; margin: -4px 0 6px; }
+  .summary-line strong { color: var(--text); }
+  .lang-switch { display: inline-flex; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+  .lang-btn { background: transparent; border: none; padding: 4px 9px; font-size: 12px; font-weight: 700; color: var(--muted); border-radius: 6px; }
+  .lang-btn.on { background: var(--brand); color: var(--on-brand); }
+  .lang-btn:hover { border: none; color: var(--text); }
+  .lang-btn.on:hover { color: var(--on-brand); }
   .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
   .chip { padding: 5px 11px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: transparent; }
   .chip.on { background: var(--brand); color: var(--on-brand); border-color: var(--brand); }
@@ -253,7 +259,7 @@
 function fmt(n){
   n = Math.round(n || 0);
   const neg = n < 0; n = Math.abs(n);
-  return (neg?'-':'') + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return (neg?'-':'') + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, LANG === 'en' ? ',' : '.');
 }
 function parseAmount(str){
   if (typeof str === 'number') return Math.round(str);
@@ -275,6 +281,79 @@ function toast(msg){
 
 // ---------- capabilities ----------
 let db = null, sampleFn = null, downloadsCap = null, imgLimits = null, userCap = null, isOwner = false;
+// ---------- i18n ----------
+let LANG = (() => {
+  try { const v = localStorage.getItem('cetele_lang'); if (['tr','en','de'].includes(v)) return v; } catch(e){}
+  const n = (navigator.language || 'tr').slice(0, 2).toLowerCase();
+  return n === 'de' ? 'de' : n === 'tr' ? 'tr' : 'en';
+})();
+const LOCALES = { tr: 'tr-TR', en: 'en-GB', de: 'de-DE' };
+const LOC = () => LOCALES[LANG];
+const I18N = { en: {}, de: {} };
+// Translate a Turkish source string (optionally with {placeholders})
+const I18N_KEYS = { tr: {} };
+function $t(src, vars){
+  let s = src.charAt(0) === '@'
+    ? ((LANG !== 'tr' && I18N[LANG][src]) || I18N_KEYS.tr[src] || src)
+    : (LANG === 'tr' ? src : (I18N[LANG][src] ?? src));
+  if (vars) s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] ?? m));
+  return s;
+}
+I18N.en = {"\"İletişimsizlikten doğan varsayım, insanı hiç yaşanmamış kavgaların içine sokar.\"": "\"Assumptions born of silence drag you into fights that never happened.\"", "\"{name}\" adı {team} takımına bağlandı.": "\"{name}\" is now linked to {team}.", "\"{name}\" birden fazla satırda seçili.": "\"{name}\" is selected in more than one row.", "\"{name}\" için yeni ad (geçmiş kayıtlar da güncellenir):": "New name for \"{name}\" (past records are updated too):", "\"{name}\" ligi ve içindeki tüm kayıtlar (transferler, puanlar, bonuslar, kadro değerleri) kalıcı olarak silinir. Bu işlem geri alınamaz. Emin değilsen önce yedek indir.": "The league \"{name}\" and all its records (transfers, points, bonuses, squad values) will be deleted permanently. This can't be undone. If you're not sure, download a backup first.", "\"{name}\" silindi.": "\"{name}\" deleted.", "\"{name}\" silinsin mi?": "Delete \"{name}\"?", "\"{name}\" takımını silmek istediğine emin misin? Bu takıma ait geçmiş kayıtlar silinmez ama hesaplamalarda görünmez.": "Delete the team \"{name}\"? Its past records stay, but they won't appear in calculations.", "\"{old}\" artık \"{name}\".": "\"{old}\" is now \"{name}\".", "({n} transfer)": "({n} transfers)", "+ Yeni Lig": "+ New league", ", lig: {name}": ", league: {name}", "<strong>{n}</strong> / {all} transfer gösteriliyor, toplam bedel <strong class=\"num\">{sum}</strong>": "Showing <strong>{n}</strong> of {all} transfers, total fee <strong class=\"num\">{sum}</strong>", "A → Z sırala": "Sort A → Z", "Adını değiştir": "Rename", "Aktar": "Transfer", "Aktif lig": "Active league", "Android:": "Android:", "Ara…": "Search…", "Açık": "On", "Aşağıdaki adlar takım listende yok, bu yüzden geçtikleri transferler bütçeye yansımıyor. Yazım farkıysa ya da takım adını değiştirdiyse doğru takıma bağla.": "The names below aren't in your team list, so their transfers don't count towards any budget. If it's a spelling difference or the team was renamed, link it to the right team.", "Bakiye": "Balance", "Bağla": "Link", "Başlamak için bir lig oluştur": "Create a league to get started", "Başlangıç bütçesi": "Starting budget", "Bedel": "Fee", "Bedel sütunu": "Fee column", "bilinmeyen hata": "unknown error", "Bir cihazda bir kez giriş yaptıktan sonra, çıkış yapmadığın sürece tekrar şifre sorulmaz.": "Once you've signed in on a device, you won't be asked for a password again until you sign out.", "Bir kullanıcı": "A user", "Bir şikayetin, önerin ya da aklına takılan bir şey varsa bizimle iletişime geçebilirsin.": "Got a complaint, an idea or something on your mind? Get in touch with us.", "Bonus": "Bonus", "Bonus tablosu": "Bonus table", "Bonus tablosu kaydedildi.": "Bonus table saved.", "boş = sınırsız": "empty = no limit", "Bu adda bir takım zaten var.": "A team with this name already exists.", "Bu bir ÇETELE yedek dosyası değil.": "This isn't a ÇETELE backup file.", "Bu bonus oyunun kuralı değildir, tamamen opsiyoneldir — lig admininin kendi belirlediği bir prim sistemidir.": "This bonus isn't a game rule. It's entirely optional — a reward system set by your league admin.", "Bu cihazda daha önce girdiğin {n} lig var ({names}). Hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.": "There are {n} leagues you entered on this device before ({names}). Move them to your account? If your account already has the same league, it will be overwritten.", "Bu cihazda giriş yapmadan girdiğin ligler hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.": "Move the leagues you entered on this device without signing in to your account? If your account already has the same league, it will be overwritten.", "Bu cihazdaki {n} yerel ligi hesabıma aktar": "Move {n} local leagues on this device to my account", "Bu e-posta ile zaten bir hesap var. Giriş yapmayı dene.": "There's already an account with this email. Try signing in.", "Bu e-postayla ayrı bir şifreli ÇETELE hesabı zaten var. Bize geri bildirim gönder, birleştirmene yardım edelim.": "A separate password-based ÇETELE account already exists for this email. Send us feedback and we'll help you merge them.", "Bu giriş yöntemi Firebase'de açık değil. Firebase → Authentication → Sign-in method bölümünden aç.": "This sign-in method isn't enabled in Firebase. Turn it on under Firebase → Authentication → Sign-in method.", "Bu görünümde görsel gönderimi desteklenmiyor.": "Sending images isn't supported in this view.", "Bu hafta": "This week", "bu hafta": "this week", "Bu haftanın kazanılan puanı": "Points earned this week", "Bu haftanın puanı": "This week's points", "Bu hesaba şifre eklenemiyor.": "A password can't be added to this account.", "Bu işlem 10–60 saniye sürebilir.": "This can take 10–60 seconds.", "Bu ligde sıralama bonusu uygulanıyor": "This league uses a ranking bonus", "Bu ligi sil": "Delete this league", "Bu puan kaydını silmek istediğine emin misin?": "Delete this points entry?", "Bu sekmeyi sadece sen görüyorsun.": "Only you can see this tab.", "Bu site adresi Firebase'de izinli değil. Firebase → Authentication → Settings → Authorized domains bölümüne bu adresi ekle.": "This site address isn't authorised in Firebase. Add it under Firebase → Authentication → Settings → Authorized domains.", "Bu sıralama kaydını silmek istediğine emin misin?": "Delete this ranking entry?", "Bu Sıralamayı Kaydet": "Save this ranking", "Bu sıralamayı sıralama bonusu olarak da kaydet (görseldeki sıra kullanılır)": "Also save this order as a ranking bonus (uses the order in the image)", "Bu takım zaten ekli.": "This team is already added.", "Bu transferi silmek istediğine emin misin?": "Delete this transfer?", "Bulut bağlantısı kurulamadı, bu cihazdaki verilerle devam ediliyor.": "Couldn't connect to the cloud. Continuing with the data on this device.", "Buluta kaydedilemedi: Firestore güvenlik kuralları eksik ya da hatalı.": "Couldn't save to the cloud: the Firestore security rules are missing or wrong.", "Buluta kaydedilemedi{code}.": "Couldn't save to the cloud{code}.", "Bütçe": "Budget", "Büyükten küçüğe sırala": "Sort high to low", "Bırakılan dosya bir görsel değil.": "The dropped file isn't an image.", "Chrome. ⋮ → Ana ekrana ekle. Google girişi genelde sorunsuz çalışır.": "Chrome. ⋮ → Add to Home screen. Google sign-in usually works fine.", "Comunio'nun transfer haberlerindeki metni kopyalayıp yapıştır. Birden fazla haberi tek seferde yapıştırabilirsin; kaydetmeden önce önizleme tablosunda kontrol edersin.": "Copy and paste the text from Comunio's transfer news. You can paste several news items at once and check them in a preview table before saving.", "CSV İndir": "Download CSV", "Dashboard": "Dashboard", "Depolama kullanılamıyor": "Storage unavailable", "Depolama kullanılamıyor, değişiklik kaydedilemedi.": "Storage unavailable, the change couldn't be saved.", "Depolama kullanılamıyor.": "Storage unavailable.", "Değer": "Value", "Değişiklik yapılmadı.": "Nothing changed.", "Diğer": "Other", "Dosya okunamadı.": "Couldn't read the file.", "Dışa Aktar": "Export", "E-posta": "Email", "E-posta + ÇETELE şifresi": "Email + ÇETELE password", "E-posta adresi geçersiz.": "Invalid email address.", "E-posta ve şifre gir.": "Enter your email and password.", "E-posta ya da şifre hatalı.": "Wrong email or password.", "Ekle": "Add", "Ekran görüntüsü yapıştırma alanı": "Screenshot paste area", "Ekran görüntüsünü buraya yapıştır. Bilgisayarda tıklayıp Ctrl+V (Mac: ⌘+V), telefonda uzun basıp Yapıştır. Sürükleyip bırakabilirsin de.": "Paste a screenshot here. On a computer click and press Ctrl+V (Mac: ⌘+V), on a phone long-press and tap Paste. You can also drag and drop.", "Ekran görüntüsünü ya da metni yapıştır — kaydetmeden önce bir önizleme tablosunda kontrol edersin.": "Paste a screenshot or the text — you'll check everything in a preview table before saving.", "Eksi bütçe kuralı": "Negative budget rule", "Eksi bütçedeki takım(lar), haftanın ilk maçı başladığında bütçe hâlâ eksideyse o hafta 0 puan alma riskiyle karşı karşıya.": "Teams with a negative budget risk scoring 0 points this week if they're still in the red when the week's first match kicks off.", "EKSİ BÜTÇE": "IN THE RED", "Elle puan ekle": "Add points manually", "En az": "Min", "En az bir değer gir.": "Enter at least one value.", "En az bir değer seç.": "Select at least one value.", "En eski güncelleme: <strong>{d}</strong>.": "Oldest update: <strong>{d}</strong>.", "En çok": "Max", "Etiket (opsiyonel, örn. \"3. hafta\")": "Label (optional, e.g. \"Week 3\")", "Etiket (örn. \"3. hafta\")": "Label (e.g. \"Week 3\")", "Etki": "Change", "Evet, Sil": "Yes, delete", "eşleşmedi": "no match", "Eşleşmeyen takım adları": "Unmatched team names", "Filtre uygulandı": "Filter applied", "Filtrelere uyan transfer yok.": "No transfers match the filters.", "Filtreleri ve sıralamayı sıfırla": "Reset filters and sorting", "Gelen geri bildirimler": "Incoming feedback", "Geri bildirim bu görünümde gönderilemiyor.": "Feedback can't be sent from this view.", "Geri bildirim gönder": "Send feedback", "Geri bildirim gönderilemedi, tekrar dene.": "Couldn't send feedback, try again.", "Geri bildirim gönderilemedi: Firestore kuralları güncel değil.": "Couldn't send feedback: the Firestore rules are out of date.", "Geri bildirim göndermek için giriş yap.": "Sign in to send feedback.", "Geri bildirimin gönderildi, teşekkürler.": "Feedback sent, thanks.", "Geri bildirimler yüklenemedi.": "Couldn't load feedback.", "Geri yükle": "Restore", "Geçerli bir puan değeri gir.": "Enter a valid points value.", "Geçmiş sıralamalar": "Past rankings", "Girdiğin puan": "Points you enter", "girilmemiş": "not entered", "Giriş yap": "Sign in", "Giriş yap / üye ol": "Sign in / sign up", "Giriş yapmadan devam edersen kayıtların sadece bu cihazda kalır.": "If you continue without signing in, your records stay on this device only.", "Giriş yapmadan devam et": "Continue without signing in", "Giriş yaptığın hesap": "Signed in as", "Giriş yapılamadı{code}.": "Couldn't sign in{code}.", "Gmail hesabın ve şifren bundan etkilenmez. Bu şifre sadece Google girişinin çalışmadığı cihazlarda (örneğin bazı telefonlarda) ÇETELE'ye e-posta adresin ve bu şifreyle girmek için kullanılır.": "Your Gmail account and password aren't affected. This password is only for signing in to ÇETELE with your email address on devices where Google sign-in doesn't work (such as some phones).", "Google girişi bu tarayıcıda açılamıyor. E-posta ile giriş yapabilirsin.": "Google sign-in can't open in this browser. You can sign in with your email.", "Google ile devam et": "Continue with Google", "Google ile giriş": "Google sign-in", "Gönder": "Send", "Gönderilemedi, tekrar dene.": "Couldn't send, try again.", "Görsel kabul edilmedi (format ya da boyut).": "Image not accepted (format or size).", "Görsel okuma bu görünümde kullanılamıyor.": "Image reading isn't available in this view.", "Görsel okuma için izin verilmedi.": "Permission for image reading wasn't granted.", "Görsel okunamadı ({code}).": "Couldn't read the image ({code}).", "Görsel okunamadı, tekrar dene.": "Couldn't read the image, try again.", "Görselde puan rozeti okunamadı, değerleri elle girebilirsin.": "Couldn't read any points badges in the image. You can enter the values manually.", "Görselde takım satırı bulunamadı.": "No team rows found in the image.", "Görselde transfer satırı bulunamadı.": "No transfer lines found in the image.", "Görseldeki ad": "Name in image", "Görselden okunan değerleri kontrol et, gerekirse düzelt. Eşleşmeyen takımları listeden seç.": "Check the values read from the image and fix them if needed. Pick unmatched teams from the list.", "Güncel bütçe, kadro değeri ve maksimum teklif kapasitesi": "Current budget, squad value and maximum bid", "güncelleme: {d}": "updated: {d}", "Güvenlik için çıkış yapıp tekrar giriş yap, sonra hemen yeniden dene.": "For security, sign out and back in, then try again right away.", "Haftalık": "Weekly", "Haftalık puan (çerçeveli rozet)": "Weekly points (outlined badge)", "Haftalık puanları ekran görüntüsüyle ekle": "Add weekly points from a screenshot", "Haftalık puanları gir": "Enter weekly points", "Haftalık sıralama gir": "Enter weekly ranking", "Haftalık sıralama kaydedildi.": "Weekly ranking saved.", "Haftanın ilk maçı başladığında bütçesi eksi olan takım o hafta 0 puan alır": "A team still in the red when the week's first match kicks off scores 0 points that week", "Hangi puan işlensin?": "Which points should be used?", "Hata": "Bug", "Hata bildirimi": "Bug report", "Henüz geri bildirim yok.": "No feedback yet.", "Henüz puan kaydı yok.": "No points entries yet.", "Henüz sıralama girilmedi.": "No rankings entered yet.", "Henüz takım eklenmedi.": "No teams added yet.", "Henüz transfer kaydı yok.": "No transfers yet.", "Her sıra için verilecek tutarı belirle (takım sayısı kadar satır).": "Set the amount for each place (one row per team).", "Her takımın güncel kadro değerini gir — maksimum teklif hesaplaması bu değeri kullanır.": "Enter each team's current squad value — the maximum bid is calculated from it.", "Hesabıma aktar": "Move to my account", "Hesabın": "Your account", "Hesabından çıkış yapılsın mı? Kayıtların hesabında saklanmaya devam eder.": "Sign out? Your records stay saved in your account.", "Hesabınla giriş yap, kayıtların telefonda ve bilgisayarda aynı olsun. Verilerini senden başka kimse göremez.": "Sign in so your records are the same on your phone and computer. Nobody but you can see your data.", "Hesap ayarları": "Account settings", "Hiç eksiye düşemez": "Can't go negative at all", "Hiçbir transfer satırı tanınamadı, formatı kontrol et.": "No transfer lines recognised. Check the format.", "iPhone:": "iPhone:", "İndirme bu görünümde desteklenmiyor.": "Downloads aren't supported in this view.", "İndirme desteklenmiyor": "Download not supported", "İndirme iptal edildi veya başarısız.": "Download cancelled or failed.", "İnternet bağlantısı yok gibi görünüyor.": "Looks like you're offline.", "İptal": "Cancel", "İşlem iptal edildi.": "Cancelled.", "Kadro (piyasa) değerleri": "Squad (market) values", "kadro değeri": "squad value", "Kadro değeri": "Squad value", "Kadro Değeri": "Squad value", "Kadro değeri (opsiyonel)": "Squad value (optional)", "Kadro değeri girilmemiş takım:": "Teams without a squad value:", "Kadro değeri girilmemiş takım: <strong>{names}</strong>.": "Teams without a squad value: <strong>{names}</strong>.", "Kadro değeri önizlemesi": "Squad value preview", "Kadro değerinin %25'ine kadar eksiye düşebilir": "Can go negative up to 25% of squad value", "Kadro Değerleri": "Squad Values", "Kadro değerleri güncel değilse bu hesap yanlış olur": "This is wrong if squad values aren't up to date", "Kadro değerleri kaydedildi.": "Squad values saved.", "Kadro değerlerini de güncelle": "Also update squad values", "Kadro değerlerini ekran görüntüsüyle güncelle": "Update squad values from a screenshot", "Kadro değerlerini güncelle": "Update squad values", "Kalem": "Item", "Kalıcı olarak sil": "Delete permanently", "Kapalı": "Off", "Kapat": "Close", "Kaydedilecek satır seçilmedi.": "No rows selected to save.", "Kaydedildi.": "Saved.", "Kaydet": "Save", "Kaydetme hatası.": "Couldn't save.", "Kayıtlar sadece bu cihazda": "Records on this device only", "Kayıtların hesabında saklanıyor ve giriş yaptığın tüm cihazlarda aynı görünüyor. Yine de ara sıra yedek indirmeni öneririm.": "Your records are saved in your account and look the same on every device you sign in on. It's still a good idea to download a backup now and then.", "Kimden": "From", "Kime": "To", "Konu": "Topic", "Küçükten büyüğe sırala": "Sort low to high", "Lig adı": "League name", "Lig Kurulumu": "League Setup", "Lig oluşturulamadı.": "Couldn't create the league.", "Lig oluşturuldu. Şimdi takımları ekle.": "League created. Now add the teams.", "Lig silinemedi, tekrar dene.": "Couldn't delete the league, try again.", "Lig yok": "No leagues", "Ligdeki tüm takımların gerçek isimleri (market/bot hesabı hariç)": "The exact names of every team in the league (not the market/computer account)", "Ligdeki {n} transfer ve diğer tüm kayıtlar kalıcı olarak silinecek. Onaylamak için lig adını aşağıya aynen yaz.": "The league's {n} transfers and all other records will be deleted permanently. Type the league name below exactly to confirm.", "Ligi sil": "Delete league", "Ligin puan sıralaması ekranını yapıştır. Tüm takımların puanı tek seferde okunur, kaydetmeden önce kontrol edersin. İstersen aynı görüntüden kadro değerleri de güncellenir.": "Paste your league's standings screen. All teams' points are read at once and you check them before saving. Squad values can be updated from the same image too.", "Maks. Teklif": "Max bid", "Maksimum teklif = mevcut bütçe + kadro değerinin %25'i (takımın eksiye düşebileceği en fazla tutar). Yani sisteme işlenmiş kadro değeri doğrudan hesaba girer. Kadro değerleri oyunda sürekli değiştiği için en güncel değerler işlenmezse maksimum teklif yanlış hesaplanır.": "Maximum bid = current budget + 25% of squad value (the most a team can go into the red). So the squad value you've entered goes straight into the calculation. Squad values change constantly in the game, so if the latest values aren't entered, the maximum bid will be wrong.", "Market/Bot hesabının adı (örn. Computer)": "Name of the market/computer account (e.g. Computer)", "Mesaj": "Message", "Mesaj boş olamaz.": "The message can't be empty.", "Metni ayrıştır": "Read text", "Mükerrer olabilecek satırlar işaretlendi ve varsayılan olarak devre dışı bırakıldı. Kaydetmeden önce gözden geçir.": "Possible duplicates are marked and unchecked by default. Review before saving.", "Neyi yapamıyorsun? Neyi yapabilmek isterdin?": "What can't you do? What would you like to be able to do?", "Oyuncu": "Player", "Oyuncu sütunu": "Player column", "Panoda görsel bulunamadı. Önce ekran görüntüsünü kopyala.": "No image in the clipboard. Copy the screenshot first.", "Puan": "Points", "Puan başına {n} — oyunun sabit kuralı. \"Bu haftanın puanı\" girersen mevcut toplama eklenir; \"Toplam puan\" girersen sadece önceki kayıttan farkı işlenir, çift sayılmaz.": "{n} per point — a fixed game rule. \"This week's points\" are added to the running total; with \"Total points\" only the difference from the previous entry is counted, so nothing is counted twice.", "Puan Bonusu": "Points Bonus", "Puan bonusu eklendi.": "Points bonus added.", "Puan bonusu oyunun sabit kuralı: puan başına 10.000, bu ayarlanamaz.": "The points bonus is a fixed game rule: 10,000 per point. It can't be changed.", "Puan bonusu — {label}{v} puan ({mode})": "Points bonus — {label}{v} pts ({mode})", "Puan değeri": "Points", "Puan kayıtları": "Points entries", "Puan türü": "Points type", "Puan önizlemesi": "Points preview", "Safari. Paylaş → Ana Ekrana Ekle ile uygulama gibi aç. Google girişi hata verirse e-posta adresin ve ÇETELE şifrenle gir.": "Safari. Use Share → Add to Home Screen to open it like an app. If Google sign-in fails, sign in with your email address and ÇETELE password.", "Satır kalmadı.": "No rows left.", "Satırı kaldır": "Remove row", "Seçilenleri Kaydet": "Save selected", "Sil": "Delete", "Soldaki \"+ Yeni Lig\" butonuna tıkla, lig adını gir ve Lig Kurulumu sekmesinden takımlarını tanımla.": "Click \"+ New league\" on the left, name your league and add your teams in League Setup.", "Sonuç yok": "No results", "Sütun başlıklarına tıklayarak sırala ve filtrele. Takım düğmeleri, seçili takımların alış ve satışlarını gösterir.": "Click the column headers to sort and filter. The team buttons show the selected teams' purchases and sales.", "Sıralama (admin) bonusu": "Ranking (admin) bonus", "Sıralama Bonusu": "Ranking Bonus", "sıralama bonusu kaydedildi": "ranking bonus saved", "sıralama bonusu kaydedilmedi (tüm takımlar eşleşmeli)": "ranking bonus not saved (all teams must be matched)", "Sıralama bonusu{label} ({n}. sıra)": "Ranking bonus{label} (place {n})", "Sıralama görüntüsü okunuyor…": "Reading the standings image…", "Tabloyu Kaydet": "Save table", "Takım": "Team", "Takım adı ekle...": "Add team name…", "Takım karşılaştırma": "Team comparison", "takım listesinde yok": "not in team list", "Takım:": "Team:", "Takımlar": "Teams", "Takımları 1.'den sona doğru sürükleyerek sırala, sonra kaydet.": "Drag the teams into order from 1st to last, then save.", "Takımların kadro değerlerinin göründüğü sıralama ekranını yapıştır.": "Paste the standings screen that shows the teams' squad values.", "Tamam": "OK", "Tarayıcı Google giriş penceresini engelledi. E-posta ile giriş yapabilirsin.": "Your browser blocked the Google sign-in window. You can sign in with your email.", "Tarayıcı veri saklamaya izin vermiyor. Gizli/özel sekmede açtıysan normal bir sekmede açmayı dene.": "Your browser isn't allowing data storage. If you opened a private tab, try a normal one.", "Tek seferde en fazla {max} görsel okunabilir, ilk {max} tanesi alındı.": "Up to {max} images can be read at once; the first {max} were used.", "Telefonda Google girişi hata verirse e-posta ile üye ol ya da giriş yap. Daha önce Google ile hesap açtıysan önce bilgisayarda sol menüdeki \"Hesap ayarları\"ndan bir ÇETELE şifresi oluştur, sonra burada Gmail adresin ve o şifreyle \"Giriş yap\". En sorunsuz tarayıcılar: iPhone'da Safari, Android'de Chrome.": "If Google sign-in fails on your phone, sign up or sign in with your email. If you already have a Google-based account, first create a ÇETELE password on your computer under \"Account settings\" in the left menu, then sign in here with your Gmail address and that password. Works best in Safari on iPhone and Chrome on Android.", "Telefonda hangi tarayıcı?": "Which browser on your phone?", "Temel lig ayarları": "Basic league settings", "Temizle": "Clear", "Toplam": "Total", "toplam": "total", "Toplam (kümülatif) puan": "Total (cumulative) points", "Toplam puan (dolu rozet), sadece fark işlenir": "Total points (filled badge), only the difference is counted", "Toplam puan (sadece fark işlenir)": "Total points (only the difference is counted)", "Transfer görüntüsü okunuyor…": "Reading the transfer image…", "Transfer metni (Türkçe, İngilizce ya da Almanca)": "Transfer text (Turkish, English or German)", "Transfer önizlemesi ({n} satır)": "Transfer preview ({n} rows)", "Transferler": "Transfers", "Tüm bütçe hareketlerini CSV olarak indir.": "Download all budget movements as a CSV file.", "Tüm liglerini tek bir dosyaya yedekle ya da bir yedek dosyasını geri yükle.": "Back up all your leagues to one file, or restore from a backup file.", "Tüm takımların puanını tek tabloda gir. Puan başına {n} — oyunun sabit kuralı. Kadro değeri girersen maksimum teklif hesabı da güncellenir.": "Enter every team's points in one table. {n} per point — a fixed game rule. If you enter squad values, the maximum bid is updated too.", "Tüm transferler": "All transfers", "Tümünü Kaydet": "Save all", "Tümünü seç": "Select all", "Tür": "Type", "Uygula": "Apply", "Vazgeç": "Cancel", "Verilerin sadece bu cihazdaki tarayıcıda saklanıyor, kimseyle paylaşılmıyor. Tarayıcı verilerini silersen kaybolur. Düzenli yedek al; telefon ile bilgisayar arasında taşımak için de yedek dosyasını kullan ya da giriş yap.": "Your data is stored only in this device's browser and isn't shared with anyone. Clearing browser data deletes it. Back up regularly, and use the backup file (or sign in) to move data between phone and computer.", "ya da e-posta ile": "or with email", "ya da transfer metnini yapıştır (Türkçe, İngilizce ya da Almanca)": "or paste the transfer text (Turkish, English or German)", "Yapıştırılan görsel okunamadı, \"Dosyadan seç\" ile dene.": "Couldn't read the pasted image. Try \"Choose file\".", "Yedek geri yüklendi.": "Backup restored.", "Yedek indir": "Download backup", "Yedekleme": "Backup", "Yedekten geri yükle": "Restore from backup", "Yeni Lig": "New league", "Yeni lig adı:": "New league name:", "Yeni transfer ekle": "Add new transfers", "Yeni ÇETELE şifresi (en az 6 karakter)": "New ÇETELE password (at least 6 characters)", "Yeni ÇETELE şifresi (tekrar)": "New ÇETELE password (again)", "Yine de kaydet": "Save anyway", "Yükleniyor…": "Loading…", "Z → A sırala": "Sort Z → A", "{col} sütunu": "{col} column", "{names} için aynı puan daha önce girilmiş görünüyor. Yine de kaydedilsin mi?": "The same points seem to have been entered already for {names}. Save anyway?", "{n} kadro değeri güncellendi": "{n} squad values updated", "{n} lig hesabına aktarıldı.": "{n} leagues moved to your account.", "{n} lig yüklenecek, bunlardan {k} tanesi aynı ligin üzerine yazılacak. Devam edilsin mi?": "{n} leagues will be loaded, {k} of which will overwrite the same league. Continue?", "{n} lig yüklenecek. Devam edilsin mi?": "{n} leagues will be loaded. Continue?", "{n} takımın puanı işlendi": "points saved for {n} teams", "{n} transfer kaydedildi.": "{n} transfers saved.", "{n}. sıra": "Place {n}", "{player} ({from} tarafından alış)": "{player} (bought from {from})", "{player} ({to} tarafına satış)": "{player} (sold to {to})", "{team} — Bütçe geçmişi": "{team} — Budget history", "ÇETELE şifren kaydedildi. Başka bir cihazda {email} ve bu şifreyle giriş yapabilirsin.": "ÇETELE password saved. On another device you can sign in with {email} and this password.", "ÇETELE şifresi oluştur": "Create ÇETELE password", "ÇETELE şifresi, Gmail şifren değildir.": "Your ÇETELE password is not your Gmail password.", "ÇETELE şifresini değiştir": "Change ÇETELE password", "ÇETELE — Fantezi Lig Bütçe Takibi": "ÇETELE — Fantasy League Budget Tracker", "ÇETELE'ye giriş yöntemlerin": "Your ways to sign in to ÇETELE", "Çok fazla deneme yapıldı, biraz bekleyip tekrar dene.": "Too many attempts. Wait a bit and try again.", "Çok sık istek gönderildi, biraz bekleyip tekrar dene.": "Too many requests. Wait a bit and try again.", "Çıkış yap": "Sign out", "Önce bir takım seç.": "Pick a team first.", "Önce e-posta adresini yaz, sonra \"Şifremi unuttum\"a bas.": "Enter your email first, then tap \"Forgot password\".", "Önce Lig Kurulumu sekmesinden takım ekle.": "Add teams in League Setup first.", "Öneri": "Idea", "Öneri / yeni özellik": "Idea / new feature", "örn. 1.000.000": "e.g. 1,000,000", "örn. 63": "e.g. 63", "Üye ol": "Sign up", "Şifre": "Password", "Şifre (tekrar)": "Password (again)", "Şifre en az 6 karakter olmalı.": "The password must be at least 6 characters.", "Şifre gir.": "Enter a password.", "Şifre sıfırlama bağlantısı e-postana gönderildi. Spam klasörüne de bak.": "A password reset link has been sent to your email. Check your spam folder too.", "Şifreler aynı değil.": "The passwords don't match.", "Şifremi unuttum": "Forgot password", "Şifreyi kaydet": "Save password", "Şu adlar takım listesinde yok: {names}. Bu adların geçtiği transferler bütçeye yansımaz (yazım farkı olabilir). Yine de kaydedilsin mi?": "These names aren't in the team list: {names}. Transfers involving them won't count towards any budget (it may be a spelling difference). Save anyway?", "— takım seç —": "— pick a team —", "⚙ Hesap ayarları": "⚙ Account settings", "⚠ Maks. teklif kadro değerine bağlı:": "⚠ Max bid depends on squad value:", "⚠ olası mükerrer": "⚠ possible duplicate", "⚠ Uyarı:": "⚠ Warning:", "✉ Geri bildirim gönder": "✉ Send feedback", "📖 Kullanma Kılavuzu": "📖 User Guide", "📷 Dosyadan seç": "📷 Choose file", "@nameNote": "<strong>⚠ Write team names exactly as in the game.</strong> Transfers are matched by the team names in the text you copy from the game. The safest way is to <strong>copy and paste</strong> the names from the Comunio standings. Upper/lower case and extra spaces (such as a double space between words) don't matter. But any spelling difference counts as a different team, and those transfers won't count towards the budget: for example words run together (\"Black Eagles\" vs \"BlackEagles\") or a different letter (\"Yıldız FC\" vs \"Yildiz FC\"). If that happens, you'll see a warning in the Transfers tab. If a player renames their team in the game, update it here with ✎."};
+I18N.de = {"\"İletişimsizlikten doğan varsayım, insanı hiç yaşanmamış kavgaların içine sokar.\"": "„Annahmen, die aus Schweigen entstehen, ziehen dich in Streits, die nie stattgefunden haben.“", "\"{name}\" adı {team} takımına bağlandı.": "„{name}“ ist jetzt mit {team} verknüpft.", "\"{name}\" birden fazla satırda seçili.": "„{name}“ ist in mehreren Zeilen ausgewählt.", "\"{name}\" için yeni ad (geçmiş kayıtlar da güncellenir):": "Neuer Name für „{name}“ (frühere Einträge werden mit aktualisiert):", "\"{name}\" ligi ve içindeki tüm kayıtlar (transferler, puanlar, bonuslar, kadro değerleri) kalıcı olarak silinir. Bu işlem geri alınamaz. Emin değilsen önce yedek indir.": "Die Liga „{name}“ und alle ihre Einträge (Transfers, Punkte, Prämien, Teamwerte) werden dauerhaft gelöscht. Das lässt sich nicht rückgängig machen. Wenn du unsicher bist, lade vorher ein Backup herunter.", "\"{name}\" silindi.": "„{name}“ gelöscht.", "\"{name}\" silinsin mi?": "„{name}“ löschen?", "\"{name}\" takımını silmek istediğine emin misin? Bu takıma ait geçmiş kayıtlar silinmez ama hesaplamalarda görünmez.": "Team „{name}“ wirklich löschen? Frühere Einträge bleiben erhalten, werden aber nicht mehr berechnet.", "\"{old}\" artık \"{name}\".": "„{old}“ heißt jetzt „{name}“.", "({n} transfer)": "({n} Transfers)", "+ Yeni Lig": "+ Neue Liga", ", lig: {name}": ", Liga: {name}", "<strong>{n}</strong> / {all} transfer gösteriliyor, toplam bedel <strong class=\"num\">{sum}</strong>": "<strong>{n}</strong> von {all} Transfers, Summe <strong class=\"num\">{sum}</strong>", "A → Z sırala": "A → Z sortieren", "Adını değiştir": "Umbenennen", "Aktar": "Übertragen", "Aktif lig": "Aktive Liga", "Android:": "Android:", "Ara…": "Suchen…", "Açık": "An", "Aşağıdaki adlar takım listende yok, bu yüzden geçtikleri transferler bütçeye yansımıyor. Yazım farkıysa ya da takım adını değiştirdiyse doğru takıma bağla.": "Die folgenden Namen stehen nicht in deiner Teamliste, daher zählen ihre Transfers für kein Budget. Wenn es ein Schreibfehler ist oder das Team umbenannt wurde, verknüpfe den Namen mit dem richtigen Team.", "Bakiye": "Saldo", "Bağla": "Verknüpfen", "Başlamak için bir lig oluştur": "Erstelle eine Liga, um loszulegen", "Başlangıç bütçesi": "Startbudget", "Bedel": "Ablöse", "Bedel sütunu": "Spalte Ablöse", "bilinmeyen hata": "unbekannter Fehler", "Bir cihazda bir kez giriş yaptıktan sonra, çıkış yapmadığın sürece tekrar şifre sorulmaz.": "Wenn du dich einmal auf einem Gerät angemeldet hast, wirst du erst nach dem Abmelden wieder nach dem Passwort gefragt.", "Bir kullanıcı": "Ein Nutzer", "Bir şikayetin, önerin ya da aklına takılan bir şey varsa bizimle iletişime geçebilirsin.": "Du hast eine Beschwerde, eine Idee oder eine Frage? Schreib uns.", "Bonus": "Prämie", "Bonus tablosu": "Prämientabelle", "Bonus tablosu kaydedildi.": "Prämientabelle gespeichert.", "boş = sınırsız": "leer = unbegrenzt", "Bu adda bir takım zaten var.": "Ein Team mit diesem Namen gibt es schon.", "Bu bir ÇETELE yedek dosyası değil.": "Das ist keine ÇETELE-Backup-Datei.", "Bu bonus oyunun kuralı değildir, tamamen opsiyoneldir — lig admininin kendi belirlediği bir prim sistemidir.": "Diese Prämie ist keine Spielregel, sondern komplett optional — ein Prämiensystem, das dein Liga-Admin selbst festlegt.", "Bu cihazda daha önce girdiğin {n} lig var ({names}). Hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.": "Auf diesem Gerät gibt es {n} Ligen, die du früher angelegt hast ({names}). In dein Konto übertragen? Ist dieselbe Liga schon in deinem Konto, wird sie überschrieben.", "Bu cihazda giriş yapmadan girdiğin ligler hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.": "Die Ligen, die du auf diesem Gerät ohne Anmeldung angelegt hast, in dein Konto übertragen? Ist dieselbe Liga schon in deinem Konto, wird sie überschrieben.", "Bu cihazdaki {n} yerel ligi hesabıma aktar": "{n} lokale Ligen dieses Geräts in mein Konto übertragen", "Bu e-posta ile zaten bir hesap var. Giriş yapmayı dene.": "Mit dieser E-Mail gibt es schon ein Konto. Versuch dich anzumelden.", "Bu e-postayla ayrı bir şifreli ÇETELE hesabı zaten var. Bize geri bildirim gönder, birleştirmene yardım edelim.": "Für diese E-Mail gibt es bereits ein separates ÇETELE-Konto mit Passwort. Schick uns Feedback, wir helfen dir beim Zusammenführen.", "Bu giriş yöntemi Firebase'de açık değil. Firebase → Authentication → Sign-in method bölümünden aç.": "Diese Anmeldemethode ist in Firebase nicht aktiviert. Aktiviere sie unter Firebase → Authentication → Sign-in method.", "Bu görünümde görsel gönderimi desteklenmiyor.": "Bilder senden wird in dieser Ansicht nicht unterstützt.", "Bu hafta": "Diese Woche", "bu hafta": "diese Woche", "Bu haftanın kazanılan puanı": "Diese Woche erzielte Punkte", "Bu haftanın puanı": "Punkte dieser Woche", "Bu hesaba şifre eklenemiyor.": "Diesem Konto kann kein Passwort hinzugefügt werden.", "Bu işlem 10–60 saniye sürebilir.": "Das kann 10–60 Sekunden dauern.", "Bu ligde sıralama bonusu uygulanıyor": "Diese Liga verwendet eine Platzierungsprämie", "Bu ligi sil": "Diese Liga löschen", "Bu puan kaydını silmek istediğine emin misin?": "Diesen Punkteeintrag wirklich löschen?", "Bu sekmeyi sadece sen görüyorsun.": "Nur du siehst diesen Tab.", "Bu site adresi Firebase'de izinli değil. Firebase → Authentication → Settings → Authorized domains bölümüne bu adresi ekle.": "Diese Adresse ist in Firebase nicht freigegeben. Füge sie unter Firebase → Authentication → Settings → Authorized domains hinzu.", "Bu sıralama kaydını silmek istediğine emin misin?": "Diesen Platzierungseintrag wirklich löschen?", "Bu Sıralamayı Kaydet": "Diese Platzierung speichern", "Bu sıralamayı sıralama bonusu olarak da kaydet (görseldeki sıra kullanılır)": "Diese Reihenfolge auch als Platzierungsprämie speichern (Reihenfolge aus dem Bild)", "Bu takım zaten ekli.": "Dieses Team ist schon hinzugefügt.", "Bu transferi silmek istediğine emin misin?": "Diesen Transfer wirklich löschen?", "Bulut bağlantısı kurulamadı, bu cihazdaki verilerle devam ediliyor.": "Keine Verbindung zur Cloud. Es geht mit den Daten auf diesem Gerät weiter.", "Buluta kaydedilemedi: Firestore güvenlik kuralları eksik ya da hatalı.": "Speichern in der Cloud fehlgeschlagen: Die Firestore-Sicherheitsregeln fehlen oder sind falsch.", "Buluta kaydedilemedi{code}.": "Speichern in der Cloud fehlgeschlagen{code}.", "Bütçe": "Kontostand", "Büyükten küçüğe sırala": "Absteigend sortieren", "Bırakılan dosya bir görsel değil.": "Die abgelegte Datei ist kein Bild.", "Chrome. ⋮ → Ana ekrana ekle. Google girişi genelde sorunsuz çalışır.": "Chrome. ⋮ → Zum Startbildschirm hinzufügen. Die Google-Anmeldung funktioniert meist problemlos.", "Comunio'nun transfer haberlerindeki metni kopyalayıp yapıştır. Birden fazla haberi tek seferde yapıştırabilirsin; kaydetmeden önce önizleme tablosunda kontrol edersin.": "Kopiere den Text aus den Comunio-Transfernews und füge ihn ein. Du kannst mehrere News auf einmal einfügen und vor dem Speichern in einer Vorschau prüfen.", "CSV İndir": "CSV herunterladen", "Dashboard": "Übersicht", "Depolama kullanılamıyor": "Speicher nicht verfügbar", "Depolama kullanılamıyor, değişiklik kaydedilemedi.": "Speicher nicht verfügbar, die Änderung wurde nicht gespeichert.", "Depolama kullanılamıyor.": "Speicher nicht verfügbar.", "Değer": "Wert", "Değişiklik yapılmadı.": "Keine Änderung.", "Diğer": "Sonstiges", "Dosya okunamadı.": "Datei konnte nicht gelesen werden.", "Dışa Aktar": "Exportieren", "E-posta": "E-Mail", "E-posta + ÇETELE şifresi": "E-Mail + ÇETELE-Passwort", "E-posta adresi geçersiz.": "Ungültige E-Mail-Adresse.", "E-posta ve şifre gir.": "Gib E-Mail und Passwort ein.", "E-posta ya da şifre hatalı.": "E-Mail oder Passwort falsch.", "Ekle": "Hinzufügen", "Ekran görüntüsü yapıştırma alanı": "Bereich zum Einfügen von Screenshots", "Ekran görüntüsünü buraya yapıştır. Bilgisayarda tıklayıp Ctrl+V (Mac: ⌘+V), telefonda uzun basıp Yapıştır. Sürükleyip bırakabilirsin de.": "Füge hier einen Screenshot ein. Am Computer klicken und Strg+V (Mac: ⌘+V), am Handy lange drücken und Einfügen. Ziehen und Ablegen geht auch.", "Ekran görüntüsünü ya da metni yapıştır — kaydetmeden önce bir önizleme tablosunda kontrol edersin.": "Füge einen Screenshot oder den Text ein — vor dem Speichern prüfst du alles in einer Vorschau.", "Eksi bütçe kuralı": "Minus-Regel", "Eksi bütçedeki takım(lar), haftanın ilk maçı başladığında bütçe hâlâ eksideyse o hafta 0 puan alma riskiyle karşı karşıya.": "Teams im Minus riskieren 0 Punkte in dieser Woche, wenn sie beim Anpfiff des ersten Spiels noch im Minus sind.", "EKSİ BÜTÇE": "IM MINUS", "Elle puan ekle": "Punkte manuell eintragen", "En az": "Mindestens", "En az bir değer gir.": "Gib mindestens einen Wert ein.", "En az bir değer seç.": "Wähle mindestens einen Wert.", "En eski güncelleme: <strong>{d}</strong>.": "Älteste Aktualisierung: <strong>{d}</strong>.", "En çok": "Höchstens", "Etiket (opsiyonel, örn. \"3. hafta\")": "Bezeichnung (optional, z. B. „3. Spieltag“)", "Etiket (örn. \"3. hafta\")": "Bezeichnung (z. B. „3. Spieltag“)", "Etki": "Betrag", "Evet, Sil": "Ja, löschen", "eşleşmedi": "keine Zuordnung", "Eşleşmeyen takım adları": "Nicht zugeordnete Teamnamen", "Filtre uygulandı": "Filter aktiv", "Filtrelere uyan transfer yok.": "Keine Transfers passen zu den Filtern.", "Filtreleri ve sıralamayı sıfırla": "Filter und Sortierung zurücksetzen", "Gelen geri bildirimler": "Eingegangenes Feedback", "Geri bildirim bu görünümde gönderilemiyor.": "Feedback kann in dieser Ansicht nicht gesendet werden.", "Geri bildirim gönder": "Feedback senden", "Geri bildirim gönderilemedi, tekrar dene.": "Feedback konnte nicht gesendet werden, versuch es nochmal.", "Geri bildirim gönderilemedi: Firestore kuralları güncel değil.": "Feedback konnte nicht gesendet werden: Die Firestore-Regeln sind veraltet.", "Geri bildirim göndermek için giriş yap.": "Melde dich an, um Feedback zu senden.", "Geri bildirimin gönderildi, teşekkürler.": "Feedback gesendet, danke.", "Geri bildirimler yüklenemedi.": "Feedback konnte nicht geladen werden.", "Geri yükle": "Wiederherstellen", "Geçerli bir puan değeri gir.": "Gib einen gültigen Punktwert ein.", "Geçmiş sıralamalar": "Frühere Platzierungen", "Girdiğin puan": "Eingegebene Punkte", "girilmemiş": "nicht eingetragen", "Giriş yap": "Anmelden", "Giriş yap / üye ol": "Anmelden / Registrieren", "Giriş yapmadan devam edersen kayıtların sadece bu cihazda kalır.": "Ohne Anmeldung bleiben deine Einträge nur auf diesem Gerät.", "Giriş yapmadan devam et": "Ohne Anmeldung fortfahren", "Giriş yaptığın hesap": "Angemeldet als", "Giriş yapılamadı{code}.": "Anmeldung fehlgeschlagen{code}.", "Gmail hesabın ve şifren bundan etkilenmez. Bu şifre sadece Google girişinin çalışmadığı cihazlarda (örneğin bazı telefonlarda) ÇETELE'ye e-posta adresin ve bu şifreyle girmek için kullanılır.": "Dein Gmail-Konto und dein Passwort bleiben unberührt. Dieses Passwort dient nur dazu, dich auf Geräten, auf denen die Google-Anmeldung nicht klappt (z. B. manchen Handys), mit deiner E-Mail bei ÇETELE anzumelden.", "Google girişi bu tarayıcıda açılamıyor. E-posta ile giriş yapabilirsin.": "Die Google-Anmeldung lässt sich in diesem Browser nicht öffnen. Du kannst dich per E-Mail anmelden.", "Google ile devam et": "Weiter mit Google", "Google ile giriş": "Google-Anmeldung", "Gönder": "Senden", "Gönderilemedi, tekrar dene.": "Senden fehlgeschlagen, versuch es nochmal.", "Görsel kabul edilmedi (format ya da boyut).": "Bild nicht akzeptiert (Format oder Größe).", "Görsel okuma bu görünümde kullanılamıyor.": "Bilderkennung ist in dieser Ansicht nicht verfügbar.", "Görsel okuma için izin verilmedi.": "Die Erlaubnis zur Bilderkennung wurde nicht erteilt.", "Görsel okunamadı ({code}).": "Bild konnte nicht gelesen werden ({code}).", "Görsel okunamadı, tekrar dene.": "Bild konnte nicht gelesen werden, versuch es nochmal.", "Görselde puan rozeti okunamadı, değerleri elle girebilirsin.": "Im Bild wurden keine Punkte erkannt. Du kannst die Werte manuell eintragen.", "Görselde takım satırı bulunamadı.": "Im Bild wurden keine Teamzeilen gefunden.", "Görselde transfer satırı bulunamadı.": "Im Bild wurden keine Transferzeilen gefunden.", "Görseldeki ad": "Name im Bild", "Görselden okunan değerleri kontrol et, gerekirse düzelt. Eşleşmeyen takımları listeden seç.": "Prüfe die aus dem Bild gelesenen Werte und korrigiere sie bei Bedarf. Wähle nicht zugeordnete Teams aus der Liste.", "Güncel bütçe, kadro değeri ve maksimum teklif kapasitesi": "Aktueller Kontostand, Teamwert und maximales Gebot", "güncelleme: {d}": "aktualisiert: {d}", "Güvenlik için çıkış yapıp tekrar giriş yap, sonra hemen yeniden dene.": "Melde dich aus Sicherheitsgründen ab und wieder an und versuch es dann gleich nochmal.", "Haftalık": "Woche", "Haftalık puan (çerçeveli rozet)": "Wochenpunkte (umrandetes Symbol)", "Haftalık puanları ekran görüntüsüyle ekle": "Wochenpunkte per Screenshot eintragen", "Haftalık puanları gir": "Wochenpunkte eintragen", "Haftalık sıralama gir": "Wochenplatzierung eintragen", "Haftalık sıralama kaydedildi.": "Wochenplatzierung gespeichert.", "Haftanın ilk maçı başladığında bütçesi eksi olan takım o hafta 0 puan alır": "Ein Team, das beim Anpfiff des ersten Spiels der Woche im Minus ist, bekommt in dieser Woche 0 Punkte", "Hangi puan işlensin?": "Welche Punkte sollen verwendet werden?", "Hata": "Fehler", "Hata bildirimi": "Fehlermeldung", "Henüz geri bildirim yok.": "Noch kein Feedback.", "Henüz puan kaydı yok.": "Noch keine Punkteeinträge.", "Henüz sıralama girilmedi.": "Noch keine Platzierungen eingetragen.", "Henüz takım eklenmedi.": "Noch keine Teams hinzugefügt.", "Henüz transfer kaydı yok.": "Noch keine Transfers.", "Her sıra için verilecek tutarı belirle (takım sayısı kadar satır).": "Lege den Betrag für jeden Platz fest (eine Zeile pro Team).", "Her takımın güncel kadro değerini gir — maksimum teklif hesaplaması bu değeri kullanır.": "Trage den aktuellen Teamwert jedes Teams ein — das maximale Gebot wird daraus berechnet.", "Hesabıma aktar": "In mein Konto übertragen", "Hesabın": "Dein Konto", "Hesabından çıkış yapılsın mı? Kayıtların hesabında saklanmaya devam eder.": "Abmelden? Deine Einträge bleiben in deinem Konto gespeichert.", "Hesabınla giriş yap, kayıtların telefonda ve bilgisayarda aynı olsun. Verilerini senden başka kimse göremez.": "Melde dich an, damit deine Einträge auf Handy und Computer gleich sind. Niemand außer dir sieht deine Daten.", "Hesap ayarları": "Kontoeinstellungen", "Hiç eksiye düşemez": "Kein Minus erlaubt", "Hiçbir transfer satırı tanınamadı, formatı kontrol et.": "Keine Transferzeilen erkannt. Prüfe das Format.", "iPhone:": "iPhone:", "İndirme bu görünümde desteklenmiyor.": "Downloads werden in dieser Ansicht nicht unterstützt.", "İndirme desteklenmiyor": "Download nicht unterstützt", "İndirme iptal edildi veya başarısız.": "Download abgebrochen oder fehlgeschlagen.", "İnternet bağlantısı yok gibi görünüyor.": "Anscheinend besteht keine Internetverbindung.", "İptal": "Abbrechen", "İşlem iptal edildi.": "Abgebrochen.", "Kadro (piyasa) değerleri": "Teamwerte (Marktwert)", "kadro değeri": "Teamwert", "Kadro değeri": "Teamwert", "Kadro Değeri": "Teamwert", "Kadro değeri (opsiyonel)": "Teamwert (optional)", "Kadro değeri girilmemiş takım:": "Teams ohne Teamwert:", "Kadro değeri girilmemiş takım: <strong>{names}</strong>.": "Teams ohne Teamwert: <strong>{names}</strong>.", "Kadro değeri önizlemesi": "Vorschau Teamwerte", "Kadro değerinin %25'ine kadar eksiye düşebilir": "Minus bis 25 % des Teamwerts erlaubt", "Kadro Değerleri": "Teamwerte", "Kadro değerleri güncel değilse bu hesap yanlış olur": "Stimmt nicht, wenn die Teamwerte veraltet sind", "Kadro değerleri kaydedildi.": "Teamwerte gespeichert.", "Kadro değerlerini de güncelle": "Teamwerte auch aktualisieren", "Kadro değerlerini ekran görüntüsüyle güncelle": "Teamwerte per Screenshot aktualisieren", "Kadro değerlerini güncelle": "Teamwerte aktualisieren", "Kalem": "Posten", "Kalıcı olarak sil": "Endgültig löschen", "Kapalı": "Aus", "Kapat": "Schließen", "Kaydedilecek satır seçilmedi.": "Keine Zeilen zum Speichern ausgewählt.", "Kaydedildi.": "Gespeichert.", "Kaydet": "Speichern", "Kaydetme hatası.": "Speichern fehlgeschlagen.", "Kayıtlar sadece bu cihazda": "Einträge nur auf diesem Gerät", "Kayıtların hesabında saklanıyor ve giriş yaptığın tüm cihazlarda aynı görünüyor. Yine de ara sıra yedek indirmeni öneririm.": "Deine Einträge sind in deinem Konto gespeichert und auf allen Geräten gleich, auf denen du angemeldet bist. Lade trotzdem ab und zu ein Backup herunter.", "Kimden": "Von", "Kime": "Zu", "Konu": "Thema", "Küçükten büyüğe sırala": "Aufsteigend sortieren", "Lig adı": "Liganame", "Lig Kurulumu": "Liga einrichten", "Lig oluşturulamadı.": "Liga konnte nicht erstellt werden.", "Lig oluşturuldu. Şimdi takımları ekle.": "Liga erstellt. Füge jetzt die Teams hinzu.", "Lig silinemedi, tekrar dene.": "Liga konnte nicht gelöscht werden, versuch es nochmal.", "Lig yok": "Keine Liga", "Ligdeki tüm takımların gerçek isimleri (market/bot hesabı hariç)": "Die genauen Namen aller Teams der Liga (ohne Markt-/Computer-Konto)", "Ligdeki {n} transfer ve diğer tüm kayıtlar kalıcı olarak silinecek. Onaylamak için lig adını aşağıya aynen yaz.": "Die {n} Transfers der Liga und alle anderen Einträge werden dauerhaft gelöscht. Gib zur Bestätigung den Liganamen genau so unten ein.", "Ligi sil": "Liga löschen", "Ligin puan sıralaması ekranını yapıştır. Tüm takımların puanı tek seferde okunur, kaydetmeden önce kontrol edersin. İstersen aynı görüntüden kadro değerleri de güncellenir.": "Füge den Tabellen-Screenshot deiner Liga ein. Die Punkte aller Teams werden auf einmal gelesen und du prüfst sie vor dem Speichern. Die Teamwerte können aus demselben Bild aktualisiert werden.", "Maks. Teklif": "Max. Gebot", "Maksimum teklif = mevcut bütçe + kadro değerinin %25'i (takımın eksiye düşebileceği en fazla tutar). Yani sisteme işlenmiş kadro değeri doğrudan hesaba girer. Kadro değerleri oyunda sürekli değiştiği için en güncel değerler işlenmezse maksimum teklif yanlış hesaplanır.": "Maximales Gebot = aktueller Kontostand + 25 % des Teamwerts (so weit darf ein Team ins Minus gehen). Der eingetragene Teamwert fließt also direkt in die Berechnung ein. Da sich die Teamwerte im Spiel ständig ändern, ist das maximale Gebot falsch, wenn die aktuellen Werte fehlen.", "Market/Bot hesabının adı (örn. Computer)": "Name des Markt-/Computer-Kontos (z. B. Computer)", "Mesaj": "Nachricht", "Mesaj boş olamaz.": "Die Nachricht darf nicht leer sein.", "Metni ayrıştır": "Text auslesen", "Mükerrer olabilecek satırlar işaretlendi ve varsayılan olarak devre dışı bırakıldı. Kaydetmeden önce gözden geçir.": "Mögliche Duplikate sind markiert und standardmäßig abgewählt. Prüfe vor dem Speichern.", "Neyi yapamıyorsun? Neyi yapabilmek isterdin?": "Was klappt nicht? Was würdest du gern können?", "Oyuncu": "Spieler", "Oyuncu sütunu": "Spalte Spieler", "Panoda görsel bulunamadı. Önce ekran görüntüsünü kopyala.": "Kein Bild in der Zwischenablage. Kopiere zuerst den Screenshot.", "Puan": "Punkte", "Puan başına {n} — oyunun sabit kuralı. \"Bu haftanın puanı\" girersen mevcut toplama eklenir; \"Toplam puan\" girersen sadece önceki kayıttan farkı işlenir, çift sayılmaz.": "{n} pro Punkt — eine feste Spielregel. „Punkte dieser Woche“ werden zur Summe addiert; bei „Gesamtpunkte“ wird nur die Differenz zum letzten Eintrag gezählt, also nichts doppelt.", "Puan Bonusu": "Punkteprämie", "Puan bonusu eklendi.": "Punkteprämie hinzugefügt.", "Puan bonusu oyunun sabit kuralı: puan başına 10.000, bu ayarlanamaz.": "Die Punkteprämie ist eine feste Spielregel: 10.000 pro Punkt. Sie lässt sich nicht ändern.", "Puan bonusu — {label}{v} puan ({mode})": "Punkteprämie — {label}{v} Pkt. ({mode})", "Puan değeri": "Punkte", "Puan kayıtları": "Punkteeinträge", "Puan türü": "Art der Punkte", "Puan önizlemesi": "Vorschau Punkte", "Safari. Paylaş → Ana Ekrana Ekle ile uygulama gibi aç. Google girişi hata verirse e-posta adresin ve ÇETELE şifrenle gir.": "Safari. Über Teilen → Zum Home-Bildschirm wie eine App öffnen. Wenn die Google-Anmeldung scheitert, melde dich mit E-Mail und ÇETELE-Passwort an.", "Satır kalmadı.": "Keine Zeilen mehr.", "Satırı kaldır": "Zeile entfernen", "Seçilenleri Kaydet": "Auswahl speichern", "Sil": "Löschen", "Soldaki \"+ Yeni Lig\" butonuna tıkla, lig adını gir ve Lig Kurulumu sekmesinden takımlarını tanımla.": "Klicke links auf „+ Neue Liga“, gib einen Namen ein und lege unter „Liga einrichten“ deine Teams an.", "Sonuç yok": "Keine Treffer", "Sütun başlıklarına tıklayarak sırala ve filtrele. Takım düğmeleri, seçili takımların alış ve satışlarını gösterir.": "Klicke auf die Spaltenköpfe zum Sortieren und Filtern. Die Team-Schaltflächen zeigen Käufe und Verkäufe der gewählten Teams.", "Sıralama (admin) bonusu": "Platzierungsprämie (Admin)", "Sıralama Bonusu": "Platzierungsprämie", "sıralama bonusu kaydedildi": "Platzierungsprämie gespeichert", "sıralama bonusu kaydedilmedi (tüm takımlar eşleşmeli)": "Platzierungsprämie nicht gespeichert (alle Teams müssen zugeordnet sein)", "Sıralama bonusu{label} ({n}. sıra)": "Platzierungsprämie{label} ({n}. Platz)", "Sıralama görüntüsü okunuyor…": "Tabellenbild wird gelesen…", "Tabloyu Kaydet": "Tabelle speichern", "Takım": "Team", "Takım adı ekle...": "Teamnamen hinzufügen…", "Takım karşılaştırma": "Teamvergleich", "takım listesinde yok": "nicht in der Teamliste", "Takım:": "Team:", "Takımlar": "Teams", "Takımları 1.'den sona doğru sürükleyerek sırala, sonra kaydet.": "Ziehe die Teams vom 1. bis zum letzten Platz in die richtige Reihenfolge und speichere.", "Takımların kadro değerlerinin göründüğü sıralama ekranını yapıştır.": "Füge den Tabellen-Screenshot mit den Teamwerten ein.", "Tamam": "OK", "Tarayıcı Google giriş penceresini engelledi. E-posta ile giriş yapabilirsin.": "Dein Browser hat das Google-Anmeldefenster blockiert. Du kannst dich per E-Mail anmelden.", "Tarayıcı veri saklamaya izin vermiyor. Gizli/özel sekmede açtıysan normal bir sekmede açmayı dene.": "Dein Browser erlaubt keine Datenspeicherung. Falls du einen privaten Tab nutzt, versuch einen normalen.", "Tek seferde en fazla {max} görsel okunabilir, ilk {max} tanesi alındı.": "Es können höchstens {max} Bilder auf einmal gelesen werden; die ersten {max} wurden verwendet.", "Telefonda Google girişi hata verirse e-posta ile üye ol ya da giriş yap. Daha önce Google ile hesap açtıysan önce bilgisayarda sol menüdeki \"Hesap ayarları\"ndan bir ÇETELE şifresi oluştur, sonra burada Gmail adresin ve o şifreyle \"Giriş yap\". En sorunsuz tarayıcılar: iPhone'da Safari, Android'de Chrome.": "Wenn die Google-Anmeldung am Handy scheitert, registriere dich per E-Mail oder melde dich so an. Hast du schon ein Google-Konto bei ÇETELE, lege zuerst am Computer unter „Kontoeinstellungen“ im linken Menü ein ÇETELE-Passwort an und melde dich dann hier mit deiner Gmail-Adresse und diesem Passwort an. Am besten klappt es mit Safari auf dem iPhone und Chrome auf Android.", "Telefonda hangi tarayıcı?": "Welcher Browser am Handy?", "Temel lig ayarları": "Grundeinstellungen der Liga", "Temizle": "Leeren", "Toplam": "Gesamt", "toplam": "gesamt", "Toplam (kümülatif) puan": "Gesamtpunkte (kumuliert)", "Toplam puan (dolu rozet), sadece fark işlenir": "Gesamtpunkte (gefülltes Symbol), nur die Differenz zählt", "Toplam puan (sadece fark işlenir)": "Gesamtpunkte (nur die Differenz zählt)", "Transfer görüntüsü okunuyor…": "Transferbild wird gelesen…", "Transfer metni (Türkçe, İngilizce ya da Almanca)": "Transfertext (Türkisch, Englisch oder Deutsch)", "Transfer önizlemesi ({n} satır)": "Transfer-Vorschau ({n} Zeilen)", "Transferler": "Transfers", "Tüm bütçe hareketlerini CSV olarak indir.": "Alle Kontobewegungen als CSV herunterladen.", "Tüm liglerini tek bir dosyaya yedekle ya da bir yedek dosyasını geri yükle.": "Sichere alle deine Ligen in einer Datei oder stelle ein Backup wieder her.", "Tüm takımların puanını tek tabloda gir. Puan başına {n} — oyunun sabit kuralı. Kadro değeri girersen maksimum teklif hesabı da güncellenir.": "Trage die Punkte aller Teams in einer Tabelle ein. {n} pro Punkt — eine feste Spielregel. Wenn du Teamwerte einträgst, wird auch das maximale Gebot aktualisiert.", "Tüm transferler": "Alle Transfers", "Tümünü Kaydet": "Alle speichern", "Tümünü seç": "Alle auswählen", "Tür": "Art", "Uygula": "Anwenden", "Vazgeç": "Abbrechen", "Verilerin sadece bu cihazdaki tarayıcıda saklanıyor, kimseyle paylaşılmıyor. Tarayıcı verilerini silersen kaybolur. Düzenli yedek al; telefon ile bilgisayar arasında taşımak için de yedek dosyasını kullan ya da giriş yap.": "Deine Daten liegen nur im Browser dieses Geräts und werden mit niemandem geteilt. Wenn du die Browserdaten löschst, sind sie weg. Mach regelmäßig Backups und nutze die Backup-Datei (oder melde dich an), um Daten zwischen Handy und Computer zu übertragen.", "ya da e-posta ile": "oder per E-Mail", "ya da transfer metnini yapıştır (Türkçe, İngilizce ya da Almanca)": "oder füge den Transfertext ein (Türkisch, Englisch oder Deutsch)", "Yapıştırılan görsel okunamadı, \"Dosyadan seç\" ile dene.": "Das eingefügte Bild konnte nicht gelesen werden. Versuch es mit „Datei wählen“.", "Yedek geri yüklendi.": "Backup wiederhergestellt.", "Yedek indir": "Backup herunterladen", "Yedekleme": "Backup", "Yedekten geri yükle": "Aus Backup wiederherstellen", "Yeni Lig": "Neue Liga", "Yeni lig adı:": "Name der neuen Liga:", "Yeni transfer ekle": "Neue Transfers hinzufügen", "Yeni ÇETELE şifresi (en az 6 karakter)": "Neues ÇETELE-Passwort (mindestens 6 Zeichen)", "Yeni ÇETELE şifresi (tekrar)": "Neues ÇETELE-Passwort (wiederholen)", "Yine de kaydet": "Trotzdem speichern", "Yükleniyor…": "Wird geladen…", "Z → A sırala": "Z → A sortieren", "{col} sütunu": "Spalte {col}", "{names} için aynı puan daha önce girilmiş görünüyor. Yine de kaydedilsin mi?": "Für {names} scheinen dieselben Punkte schon eingetragen zu sein. Trotzdem speichern?", "{n} kadro değeri güncellendi": "{n} Teamwerte aktualisiert", "{n} lig hesabına aktarıldı.": "{n} Ligen in dein Konto übertragen.", "{n} lig yüklenecek, bunlardan {k} tanesi aynı ligin üzerine yazılacak. Devam edilsin mi?": "{n} Ligen werden geladen, davon überschreiben {k} dieselbe Liga. Fortfahren?", "{n} lig yüklenecek. Devam edilsin mi?": "{n} Ligen werden geladen. Fortfahren?", "{n} takımın puanı işlendi": "Punkte für {n} Teams gespeichert", "{n} transfer kaydedildi.": "{n} Transfers gespeichert.", "{n}. sıra": "{n}. Platz", "{player} ({from} tarafından alış)": "{player} (gekauft von {from})", "{player} ({to} tarafına satış)": "{player} (verkauft an {to})", "{team} — Bütçe geçmişi": "{team} — Kontoverlauf", "ÇETELE şifren kaydedildi. Başka bir cihazda {email} ve bu şifreyle giriş yapabilirsin.": "ÇETELE-Passwort gespeichert. Auf einem anderen Gerät kannst du dich mit {email} und diesem Passwort anmelden.", "ÇETELE şifresi oluştur": "ÇETELE-Passwort anlegen", "ÇETELE şifresi, Gmail şifren değildir.": "Dein ÇETELE-Passwort ist nicht dein Gmail-Passwort.", "ÇETELE şifresini değiştir": "ÇETELE-Passwort ändern", "ÇETELE — Fantezi Lig Bütçe Takibi": "ÇETELE — Budget-Tracker für Fantasy-Ligen", "ÇETELE'ye giriş yöntemlerin": "Deine Anmeldemethoden für ÇETELE", "Çok fazla deneme yapıldı, biraz bekleyip tekrar dene.": "Zu viele Versuche. Warte kurz und versuch es nochmal.", "Çok sık istek gönderildi, biraz bekleyip tekrar dene.": "Zu viele Anfragen. Warte kurz und versuch es nochmal.", "Çıkış yap": "Abmelden", "Önce bir takım seç.": "Wähle zuerst ein Team.", "Önce e-posta adresini yaz, sonra \"Şifremi unuttum\"a bas.": "Gib zuerst deine E-Mail ein und tippe dann auf „Passwort vergessen“.", "Önce Lig Kurulumu sekmesinden takım ekle.": "Lege zuerst unter „Liga einrichten“ Teams an.", "Öneri": "Idee", "Öneri / yeni özellik": "Idee / neue Funktion", "örn. 1.000.000": "z. B. 1.000.000", "örn. 63": "z. B. 63", "Üye ol": "Registrieren", "Şifre": "Passwort", "Şifre (tekrar)": "Passwort (wiederholen)", "Şifre en az 6 karakter olmalı.": "Das Passwort muss mindestens 6 Zeichen haben.", "Şifre gir.": "Gib ein Passwort ein.", "Şifre sıfırlama bağlantısı e-postana gönderildi. Spam klasörüne de bak.": "Ein Link zum Zurücksetzen wurde an deine E-Mail gesendet. Schau auch im Spam-Ordner nach.", "Şifreler aynı değil.": "Die Passwörter stimmen nicht überein.", "Şifremi unuttum": "Passwort vergessen", "Şifreyi kaydet": "Passwort speichern", "Şu adlar takım listesinde yok: {names}. Bu adların geçtiği transferler bütçeye yansımaz (yazım farkı olabilir). Yine de kaydedilsin mi?": "Diese Namen stehen nicht in der Teamliste: {names}. Transfers mit diesen Namen zählen für kein Budget (vielleicht ein Schreibfehler). Trotzdem speichern?", "— takım seç —": "— Team wählen —", "⚙ Hesap ayarları": "⚙ Kontoeinstellungen", "⚠ Maks. teklif kadro değerine bağlı:": "⚠ Max. Gebot hängt vom Teamwert ab:", "⚠ olası mükerrer": "⚠ mögliches Duplikat", "⚠ Uyarı:": "⚠ Achtung:", "✉ Geri bildirim gönder": "✉ Feedback senden", "📖 Kullanma Kılavuzu": "📖 Anleitung", "📷 Dosyadan seç": "📷 Datei wählen", "@nameNote": "<strong>⚠ Schreib die Teamnamen genau wie im Spiel.</strong> Transfers werden über die Teamnamen im kopierten Text zugeordnet. Am sichersten ist es, die Namen aus der Comunio-Tabelle zu <strong>kopieren und einzufügen</strong>. Groß-/Kleinschreibung und zusätzliche Leerzeichen (z. B. ein doppeltes Leerzeichen zwischen Wörtern) spielen keine Rolle. Jeder Schreibunterschied zählt aber als anderes Team, und diese Transfers fließen nicht ins Budget ein: etwa zusammengeschriebene Wörter („Schwarze Adler“ vs. „SchwarzeAdler“) oder ein abweichender Buchstabe („Müller FC“ vs. „Muller FC“). In diesem Fall erscheint im Tab „Transfers“ eine Warnung. Benennt ein Spieler sein Team im Spiel um, aktualisiere es hier mit ✎."};
+I18N_KEYS.tr = {"@nameNote": "<strong>⚠ Takım adlarını oyundakiyle aynı yaz.</strong> Transferler, oyundan kopyaladığın metindeki takım adlarına göre eşleştirilir. En güvenlisi adları Comunio'daki sıralama ekranından <strong>kopyalayıp yapıştırmak</strong>. Büyük/küçük harf farkı ve fazladan boşluklar (örneğin kelimeler arasında çift boşluk) sorun olmaz. Ama yazım farkı olursa farklı takım sayılır ve o transferler bütçeye yansımaz: kelimelerin bitişik yazılması (\"Kara Kartal\" ile \"KaraKartal\") ya da bir harfin farklı olması (\"Yıldız FC\" ile \"Yildiz FC\") gibi. Böyle bir durumda Transferler sekmesinde uyarı çıkar. Bir oyuncu takımının adını oyunda değiştirirse buradan ✎ ile adını güncelle."};
+function trLookup(k){ return LANG === 'tr' ? null : (I18N[LANG][k] ?? null); }
+const TR_ATTRS = ['placeholder', 'title', 'aria-label', 'data-placeholder'];
+function translateText(node){
+  const raw = node.nodeValue;
+  const k = raw && raw.trim();
+  if (!k || k.length < 2) return;
+  const v = trLookup(k);
+  if (v != null && v !== k) node.nodeValue = raw.replace(k, v);
+}
+function translateEl(root){
+  if (LANG === 'tr' || !root) return;
+  if (root.nodeType === 3) { translateText(root); return; }
+  if (root.nodeType !== 1) return;
+  if (root.closest && root.closest('[data-no-tr]')) return;
+  const els = [root, ...root.querySelectorAll('*')];
+  for (const e of els) {
+    if (e.hasAttribute && e.hasAttribute('data-no-tr')) continue;
+    for (const a of TR_ATTRS) {
+      if (e.hasAttribute(a)) { const v = trLookup(e.getAttribute(a).trim()); if (v != null) e.setAttribute(a, v); }
+    }
+  }
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: n => (n.parentElement && n.parentElement.closest('[data-no-tr], script, style, textarea')) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT
+  });
+  let n; while ((n = w.nextNode())) translateText(n);
+}
+const trObserver = new MutationObserver(muts => {
+  if (LANG === 'tr') return;
+  for (const m of muts) {
+    if (m.type === 'childList') m.addedNodes.forEach(n => translateEl(n));
+    else if (m.type === 'characterData') translateText(m.target);
+  }
+});
+function startTranslator(){ trObserver.observe(document.body, { childList: true, subtree: true, characterData: true }); translateEl(document.body); }
+function setLang(l){
+  if (!['tr','en','de'].includes(l)) return;
+  LANG = l;
+  try { localStorage.setItem('cetele_lang', l); } catch(e){}
+  applyLangMeta();
+  try { if (window.firebase && firebase.apps && firebase.apps.length) firebase.auth().languageCode = l; } catch(e){}
+  recompute();
+  render();
+}
+function applyLangMeta(){
+  document.documentElement.lang = LANG;
+  document.title = $t('ÇETELE — Fantezi Lig Bütçe Takibi');
+}
+function langSwitchHtml(){
+  return `<div class="lang-switch" data-no-tr role="group" aria-label="Language">${['tr','en','de'].map(l => `<button class="lang-btn ${LANG===l?'on':''}" data-lang="${l}" aria-pressed="${LANG===l}">${l.toUpperCase()}</button>`).join('')}</div>`;
+}
+function wireLangSwitch(root){ root.querySelectorAll('.lang-btn').forEach(b => b.onclick = () => setLang(b.dataset.lang)); }
+
 let isLocal = false;
 let localDb = null;
 const BRAND_SVG = `<svg class="mark" viewBox="0 0 24 24" width="28" height="28" aria-hidden="true"><rect x="2.5" y="2.2" width="15.5" height="19.6" rx="1.8" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="7.6" cy="7" r="2.6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M7.6 5.9l1.1.8-.4 1.3H6.9l-.4-1.3z" fill="currentColor"/><path d="M11.5 7h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><text x="5.2" y="15.2" font-size="5.4" font-weight="700" fill="currentColor" font-family="Arial, Helvetica, sans-serif">€</text><path d="M10 13.3h5.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><text x="5.5" y="20.2" font-size="5.4" font-weight="700" fill="currentColor" font-family="Arial, Helvetica, sans-serif">$</text><path d="M10 18.3h5.2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/><path d="M22.4 4.6l-3.1 3.8-1.4.4.3-1.4 3.1-3.8z" style="fill:var(--surface)" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>`;
@@ -325,11 +404,11 @@ function authErrorText(e){
     'auth/unauthorized-domain': 'Bu site adresi Firebase\'de izinli değil. Firebase → Authentication → Settings → Authorized domains bölümüne bu adresi ekle.',
     'auth/operation-not-allowed': 'Bu giriş yöntemi Firebase\'de açık değil. Firebase → Authentication → Sign-in method bölümünden aç.'
   };
-  return map[e && e.code] || ('Giriş yapılamadı' + (e && e.code ? ' (' + e.code + ')' : '') + '.');
+  return map[e && e.code] ? $t(map[e.code]) : $t('Giriş yapılamadı{code}.', { code: e && e.code ? ' (' + e.code + ')' : '' });
 }
 function cloudErrorText(e){
   if (e && e.code === 'permission-denied') return 'Buluta kaydedilemedi: Firestore güvenlik kuralları eksik ya da hatalı.';
-  return 'Buluta kaydedilemedi' + (e && e.code ? ' (' + e.code + ')' : '') + '.';
+  return $t('Buluta kaydedilemedi{code}.', { code: e && e.code ? ' (' + e.code + ')' : '' });
 }
 function makeCloudDb(fs, uid){
   const base = fs.collection('users').doc(uid);
@@ -364,7 +443,7 @@ async function startCloud(){
     if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
     cloud.fs = firebase.firestore();
     try { await cloud.fs.enablePersistence({ synchronizeTabs: true }); } catch(e){ /* not critical */ }
-    firebase.auth().languageCode = 'tr';
+    firebase.auth().languageCode = LANG;
     cloud.available = true;
   } catch(e) {
     console.error(e);
@@ -456,7 +535,7 @@ function openAccountModal(){
       else await user.linkWithCredential(firebase.auth.EmailAuthProvider.credential(user.email, p1));
       overlay.remove();
       render();
-      toast(`ÇETELE şifren kaydedildi. Başka bir cihazda ${user.email} ve bu şifreyle giriş yapabilirsin.`);
+      toast($t('ÇETELE şifren kaydedildi. Başka bir cihazda {email} ve bu şifreyle giriş yapabilirsin.', { email: user.email }));
     } catch(e) {
       go.disabled = false;
       if (e && e.code === 'auth/requires-recent-login') err.textContent = 'Güvenlik için çıkış yapıp tekrar giriş yap, sonra hemen yeniden dene.';
@@ -481,12 +560,12 @@ async function maybeOfferMigration(user){
   try { if (localStorage.getItem(key)) return; } catch(e){ return; }
   const locals = await localLeagues();
   if (!locals.length) { try { localStorage.setItem(key, '1'); } catch(e){} return; }
-  const ok = await showConfirm(`Bu cihazda daha önce girdiğin ${locals.length} lig var (${locals.map(l => l.name).join(', ')}). Hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.`, 'Hesabıma aktar', false);
+  const ok = await showConfirm($t('Bu cihazda daha önce girdiğin {n} lig var ({names}). Hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.', { n: locals.length, names: locals.map(l => l.name).join(', ') }), 'Hesabıma aktar', false);
   try { localStorage.setItem(key, '1'); } catch(e){}
   if (!ok) return;
   const n = await migrateLocalToCloud();
   await loadAndRender();
-  toast(`${n} lig hesabına aktarıldı.`);
+  toast($t('{n} lig hesabına aktarıldı.', { n }));
 }
 
 async function loadAndRender(){
@@ -510,7 +589,7 @@ function renderSplash(){
 function renderLogin(){
   let mode = 'signin';
   const wrap = el(`<div class="login-wrap"><div class="login-card">
-    <div class="login-brand">${BRAND_SVG}ÇETELE</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;"><div class="login-brand" style="margin:0;">${BRAND_SVG}ÇETELE</div>${langSwitchHtml()}</div>
     <p class="sub" style="margin:0 0 18px;">Hesabınla giriş yap, kayıtların telefonda ve bilgisayarda aynı olsun. Verilerini senden başka kimse göremez.</p>
     <button class="google-btn">
       <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>
@@ -586,6 +665,7 @@ function renderLogin(){
     } catch(e) { showErr(authErrorText(e)); }
   };
   $('.guest').onclick = async () => { setGuest(true); state.screen = 'app'; await loadAndRender(); };
+  wireLangSwitch(wrap);
   return wrap;
 }
 
@@ -661,7 +741,7 @@ function setLastLeagueId(id){
 // ---------- default league shape ----------
 function newLeague(name){
   return {
-    name: name || 'Yeni Lig',
+    name: name || $t('Yeni Lig'),
     createdAt: nowIso(),
     teams: [],
     marketName: 'Computer',
@@ -698,15 +778,15 @@ function unknownTransferNames(lg){
 function computeLeague(lg){
   const teams = lg.teams || [];
   const ledger = {}; teams.forEach(t => ledger[t] = []);
-  teams.forEach(t => ledger[t].push({ type: 'baslangic', label: 'Başlangıç bütçesi', amount: lg.startingBudget }));
+  teams.forEach(t => ledger[t].push({ type: 'baslangic', label: $t('Başlangıç bütçesi'), amount: lg.startingBudget }));
 
   (lg.transfers || []).forEach(tr => {
     const to = canonName(lg, tr.to), from = canonName(lg, tr.from);
     if (to && ledger[to]) {
-      ledger[to].push({ type: 'alis', label: `${tr.player} (${tr.from}'den alış)`, amount: -Math.abs(tr.amount) });
+      ledger[to].push({ type: 'alis', label: $t('{player} ({from} tarafından alış)', { player: tr.player, from: tr.from }), amount: -Math.abs(tr.amount) });
     }
     if (from && ledger[from]) {
-      ledger[from].push({ type: 'satis', label: `${tr.player} (${tr.to}'a satış)`, amount: Math.abs(tr.amount) });
+      ledger[from].push({ type: 'satis', label: $t('{player} ({to} tarafına satış)', { player: tr.player, to: tr.to }), amount: Math.abs(tr.amount) });
     }
   });
 
@@ -727,7 +807,7 @@ function computeLeague(lg){
     const bonus = credited * (lg.pointBonusPerPoint || 10000);
     ledger[p.team].push({
       type: 'puan',
-      label: `Puan bonusu — ${p.label ? p.label + ' — ' : ''}${p.value} puan (${p.mode === 'cumulative' ? 'toplam' : 'bu hafta'})`,
+      label: $t('Puan bonusu — {label}{v} puan ({mode})', { label: p.label ? p.label + ' — ' : '', v: p.value, mode: p.mode === 'cumulative' ? $t('toplam') : $t('bu hafta') }),
       amount: bonus
     });
   });
@@ -738,7 +818,7 @@ function computeLeague(lg){
         if (!teams.includes(team)) return;
         const amt = (lg.adminBonusTable || [])[idx];
         if (amt == null) return;
-        ledger[team].push({ type: 'admin', label: `Sıralama bonusu${entry.label ? ' — ' + entry.label : ''} (${idx+1}. sıra)`, amount: amt });
+        ledger[team].push({ type: 'admin', label: $t('Sıralama bonusu{label} ({n}. sıra)', { label: entry.label ? ' — ' + entry.label : '', n: idx + 1 }), amount: amt });
       });
     });
   }
@@ -848,7 +928,7 @@ function toNum(v){
 }
 function limitFiles(files){
   const max = imgLimits && imgLimits.maxCount;
-  if (max && files.length > max) { toast(`Tek seferde en fazla ${max} görsel okunabilir, ilk ${max} tanesi alındı.`); return files.slice(0, max); }
+  if (max && files.length > max) { toast($t('Tek seferde en fazla {max} görsel okunabilir, ilk {max} tanesi alındı.', { max })); return files.slice(0, max); }
   return files;
 }
 function sampleErrorText(e){
@@ -861,7 +941,7 @@ function sampleErrorText(e){
     invalid_json: 'Görsel okunamadı, tekrar dene.',
     cancelled: 'İşlem iptal edildi.'
   };
-  return map[c] || ('Görsel okunamadı (' + (c || 'bilinmeyen hata') + ').');
+  return map[c] ? $t(map[c]) : $t('Görsel okunamadı ({code}).', { code: c || $t('bilinmeyen hata') });
 }
 function showBusy(msg){
   const o = el(`<div class="overlay"><div class="modal" style="max-width:360px;text-align:center;">
@@ -1021,10 +1101,10 @@ function renderInbox(){
       const catLabel = { hata: 'Hata', oneri: 'Öneri', diger: 'Diğer' };
       items.forEach(m => {
         const who = (names[m.sender] && names[m.sender].name) || 'Bir kullanıcı';
-        const when = m.at ? new Date(m.at).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+        const when = m.at ? new Date(m.at).toLocaleString(LOC(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
         const row = el(`<div class="fb-item">
           <div class="fb-head"><span class="pill ${m.cat === 'hata' ? 'warn' : 'ok'}">${catLabel[m.cat] || 'Diğer'}</span>
-            <span class="small"></span><span class="small muted">${when}${m.league ? ', lig: ' + escapeHtml(m.league) : ''}</span></div>
+            <span class="small"></span><span class="small muted">${when}${m.league ? $t(', lig: {name}', { name: escapeHtml(m.league) }) : ''}</span></div>
           <div class="fb-text"></div>
         </div>`);
         row.querySelector('.fb-head .small').textContent = who;
@@ -1072,6 +1152,8 @@ const TABS = [
 ];
 
 async function boot(){
+  applyLangMeta();
+  startTranslator();
   await initCaps();
   document.addEventListener('paste', onGlobalPaste);
   if (isLocal && location.protocol !== 'file:') { await startCloud(); return; }
@@ -1098,6 +1180,7 @@ function renderNav(){
     </select>`;
   nav.innerHTML = `
     <div class="brand">${BRAND_SVG}ÇETELE</div>
+    <div style="padding:0 8px 14px;">${langSwitchHtml()}</div>
     <div class="field">
       <label>Aktif lig</label>
       ${leagueSelectHtml}
@@ -1116,6 +1199,7 @@ function renderNav(){
     ${(db && userCap) || cloud.available ? `<div class="nav-foot"><button id="feedback-btn" class="ghost" style="width:100%;text-align:left;color:var(--muted);">✉ Geri bildirim gönder</button></div>` : ''}
   `;
   nav.querySelector('#new-league-btn').onclick = onNewLeague;
+  wireLangSwitch(nav);
   const ab = nav.querySelector('#acct-btn');
   if (ab) ab.onclick = openAccountModal;
   const acct = nav.querySelector('.acct');
@@ -1173,8 +1257,10 @@ function renderTab(){
 }
 
 
+const GUIDE_HTML = {"en": "<h1>ÇETELE User Guide</h1>\n<p class=\"lead\">ÇETELE lets you track your rivals' budgets in your Comunio league and see how much each of them can bid for a player at most. Your records belong to you alone — nobody else can see them, including the other players in your league.</p>\n\n<h2>1. Getting started</h2>\n<p><strong>Sign in.</strong> Use your Google account or an email and password. That way your records are the same on your phone and your computer. You can also use the app without signing in, but then your records stay on that one device.</p>\n<p class=\"note\">If Google sign-in fails on your phone, <strong>sign up or sign in with your email</strong>. If you already have a Google-based account: first sign in with Google on your computer, create a <strong>ÇETELE password</strong> under <strong>Account settings</strong> in the left menu, then sign in on your phone with your Gmail address and that password. The ÇETELE password is separate from your Gmail password and doesn't affect your Gmail account. Once you've signed in on a device, you won't be asked for a password again until you sign out.</p>\n<h3>Using it on your phone</h3>\n<ul>\n<li><strong>iPhone:</strong> Open it in Safari. Tap <strong>Share</strong> at the bottom → <strong>Add to Home Screen</strong> to use it like an app. Google sign-in may fail on iPhone; in that case sign in with your email address and ÇETELE password.</li>\n<li><strong>Android:</strong> Open it in Chrome. Tap <strong>⋮</strong> at the top right → <strong>Add to Home screen</strong>. Google sign-in usually works fine.</li>\n<li><strong>Huawei phones and tablets:</strong> On Huawei devices without Google services, use Firefox and sign in with your email address and ÇETELE password. Make sure \"Delete browsing data on quit\" is off in Firefox's settings, otherwise you'll be signed out every time you close it.</li>\n<li>If you added it to your home screen, always open it from there.</li>\n</ul>\n<p><strong>Create your league.</strong> Tap <strong>+ New league</strong> in the left menu and give it a name.</p>\n<p><strong>Fill in League Setup:</strong></p>\n<ul>\n<li><strong>Teams:</strong> Add every team in the league, including your own. Copy and paste the names from Comunio. If a name is spelled differently from the game, that team's transfers won't count towards its budget.</li>\n<li><strong>Market account name:</strong> The name of the computer account shown in the game's transfer news (usually \"Computer\").</li>\n<li><strong>Starting budget:</strong> The budget everyone gets at the start of the season.</li>\n<li><strong>Negative budget rule:</strong> Choose the first option if teams in your league can go into the red up to 25% of their squad value, or the other one if they can't go negative at all.</li>\n</ul>\n\n<h2>2. Starting mid-season: enter the history</h2>\n<p>For the budgets to be correct, everything since the start of the season needs to be entered. This is a one-off job — after that you only add new activity.</p>\n<ol>\n<li><strong>Transfers:</strong> Copy and paste all the transfer news from Comunio. A single missing transfer makes that team's budget wrong.</li>\n<li><strong>Points Bonus:</strong> Enter each week's points. If you only know the current total points, you can enter them in one go with the \"Total points\" option.</li>\n<li><strong>Ranking Bonus:</strong> If your league admin pays a weekly bonus, enter the bonus table and the rankings of past weeks.</li>\n<li><strong>Squad Values:</strong> Enter every team's current squad value.</li>\n</ol>\n<p class=\"note\"><strong>Check it:</strong> Look at your own team's budget on the Dashboard and compare it with your budget in the game. If they match, your records are correct. If they don't, a transfer, points entry or bonus is missing or was entered twice. This is also the best check in the weeks that follow.</p>\n\n<h2>3. Weekly routine</h2>\n<ul>\n<li><strong>As transfers happen:</strong> Paste the new transfer news.</li>\n<li><strong>When the week ends:</strong> Enter the week's points and, if your league uses it, the ranking bonus.</li>\n<li><strong>Before you bid:</strong> Update the squad values, then check your rivals' maximum bids on the Dashboard.</li>\n</ul>\n\n<h2>4. Tabs</h2>\n<h3>Dashboard</h3>\n<p>Every team's current budget, squad value and maximum bid. Tap a team to see all its budget movements since the start of the season. Warnings for teams in the red and outdated squad values appear here. You can also download all movements as a file that opens in Excel.</p>\n<h3>Squad Values</h3>\n<p>Enter the teams' squad values. They change all the time in the game, so make a habit of updating them before you bid.</p>\n<h3>Transfers</h3>\n<p>Paste the text and tap <strong>Read text</strong>. A preview table appears before anything is saved — check the numbers and fix them if needed. A transfer that was already entered is marked as a \"possible duplicate\" and isn't saved. The transfer text can be in Turkish, English or German.</p>\n<ul>\n<li>Tap the column headers to sort and filter the table, just like in Excel.</li>\n<li>Pick one of the team buttons at the top to list all of that team's purchases and sales, with the total fee.</li>\n<li>If a name that isn't in your team list shows up, a warning appears at the top where you can link it to the right team.</li>\n</ul>\n<h3>Points Bonus</h3>\n<p>The game adds 10,000 to the budget for every point. Enter all teams' points in the table. With \"This week's points\" the points are added to the total. With \"Total points\" only the difference from the previous entry is counted, so nothing is counted twice.</p>\n<h3>Ranking Bonus</h3>\n<p>This isn't a game rule. In some leagues the admin pays extra money based on the weekly ranking. If your league does this, turn this tab on, enter the bonus table and drag the teams into order every week.</p>\n<h3>League Setup</h3>\n<p>Add, rename (✎) and delete teams, set the league rules, make backups and delete the league.</p>\n\n<h2>5. How is the maximum bid calculated?</h2>\n<p class=\"formula\">Maximum bid = current budget + 25% of squad value</p>\n<p>Example: if a team has a budget of 5,000,000 and a squad value of 80,000,000, it can bid at most 5,000,000 + 20,000,000 = <strong>25,000,000</strong>. If your league uses the \"can't go negative at all\" rule, the maximum bid is simply the current budget.</p>\n<p><strong>Keep in mind:</strong></p>\n<ul>\n<li>If a rival sells a player <strong>to another team</strong>, the money arrives immediately and their maximum bid goes up at once. Sales to the Computer are processed the next day.</li>\n<li>If the squad values are out of date, the calculation will be wrong too.</li>\n</ul>\n\n<h2>6. Important reminders</h2>\n<ul>\n<li><strong>Negative budget:</strong> A team that's still in the red when the week's first match kicks off scores 0 points that week. Teams in the red are marked in red on the Dashboard.</li>\n<li><strong>Make backups:</strong> League Setup → Backup → <strong>Download backup</strong>. Especially before big changes.</li>\n<li><strong>Don't edit on two devices at the same time:</strong> The last save wins, and the change on the other device can be lost.</li>\n</ul>\n\n<h2>7. FAQ</h2>\n<h3>My budget on the Dashboard doesn't match the game.</h3>\n<p>A transfer may be missing or entered twice, or a week's points or bonus may be missing. In the Transfers tab, select your own team and compare the list with the news in the game.</p>\n<h3>I entered a wrong transfer.</h3>\n<p>Delete it with the ✕ at the end of its row in the Transfers table, then enter the correct one.</p>\n<h3>Can the other players in my league see my records?</h3>\n<p>No. Your records are stored only in your account.</p>\n<h3>A player renamed their team.</h3>\n<p>In League Setup, tap ✎ next to that team and type the new name. All past records switch to the new name.</p>\n<h3>The app doesn't ask for my password when it opens.</h3>\n<p>That's normal. Once you've signed in on a device, you stay signed in until you tap <strong>Sign out</strong> in the left menu.</p>\n<h3>Does the ÇETELE password change my Gmail password?</h3>\n<p>No. The ÇETELE password is only for signing in to this app. Your Gmail account and password aren't affected at all.</p>\n<h3>I found a bug or have an idea.</h3>\n<p>Tap <strong>Send feedback</strong> at the bottom of the left menu. Your message comes straight to us.</p>\n", "de": "<h1>ÇETELE-Anleitung</h1>\n<p class=\"lead\">Mit ÇETELE behältst du die Kontostände deiner Gegner in deiner Comunio-Liga im Blick und siehst, wie viel jeder von ihnen höchstens für einen Spieler bieten kann. Deine Einträge gehören nur dir — niemand sonst kann sie sehen, auch nicht die anderen Spieler deiner Liga.</p>\n\n<h2>1. Erste Schritte</h2>\n<p><strong>Melde dich an.</strong> Mit deinem Google-Konto oder mit E-Mail und Passwort. So sind deine Einträge auf Handy und Computer gleich. Du kannst die App auch ohne Anmeldung nutzen, dann bleiben die Einträge aber nur auf diesem einen Gerät.</p>\n<p class=\"note\">Wenn die Google-Anmeldung am Handy scheitert, <strong>registriere dich per E-Mail oder melde dich so an</strong>. Hast du schon ein Google-Konto bei ÇETELE: Melde dich zuerst am Computer mit Google an, lege im linken Menü unter <strong>Kontoeinstellungen</strong> ein <strong>ÇETELE-Passwort</strong> an und melde dich dann am Handy mit deiner Gmail-Adresse und diesem Passwort an. Das ÇETELE-Passwort ist unabhängig von deinem Gmail-Passwort und ändert nichts an deinem Gmail-Konto. Wenn du dich einmal auf einem Gerät angemeldet hast, wirst du erst nach dem Abmelden wieder nach dem Passwort gefragt.</p>\n<h3>Nutzung am Handy</h3>\n<ul>\n<li><strong>iPhone:</strong> Öffne die Seite in Safari. Tippe unten auf <strong>Teilen</strong> → <strong>Zum Home-Bildschirm</strong>, um sie wie eine App zu nutzen. Auf dem iPhone kann die Google-Anmeldung scheitern; melde dich dann mit E-Mail und ÇETELE-Passwort an.</li>\n<li><strong>Android:</strong> Öffne die Seite in Chrome. Tippe oben rechts auf <strong>⋮</strong> → <strong>Zum Startbildschirm hinzufügen</strong>. Die Google-Anmeldung funktioniert meist problemlos.</li>\n<li><strong>Huawei-Handys und -Tablets:</strong> Nutze auf Huawei-Geräten ohne Google-Dienste Firefox und melde dich mit E-Mail und ÇETELE-Passwort an. Achte darauf, dass in den Firefox-Einstellungen „Browserdaten beim Beenden löschen“ ausgeschaltet ist, sonst wirst du bei jedem Schließen abgemeldet.</li>\n<li>Wenn du die App zum Startbildschirm hinzugefügt hast, öffne sie immer von dort.</li>\n</ul>\n<p><strong>Lege deine Liga an.</strong> Tippe im linken Menü auf <strong>+ Neue Liga</strong> und gib ihr einen Namen.</p>\n<p><strong>Fülle „Liga einrichten“ aus:</strong></p>\n<ul>\n<li><strong>Teams:</strong> Füge alle Teams der Liga hinzu, auch dein eigenes. Kopiere die Namen aus Comunio und füge sie ein. Ist ein Name anders geschrieben als im Spiel, zählen die Transfers dieses Teams nicht für sein Budget.</li>\n<li><strong>Name des Markt-Kontos:</strong> Der Name des Computer-Kontos, das in den Transfernews des Spiels erscheint (meist „Computer“).</li>\n<li><strong>Startbudget:</strong> Das Budget, das alle zu Saisonbeginn bekommen.</li>\n<li><strong>Minus-Regel:</strong> Wähle die erste Option, wenn Teams in deiner Liga bis zu 25 % ihres Teamwerts ins Minus gehen dürfen, sonst die zweite.</li>\n</ul>\n\n<h2>2. Einstieg mitten in der Saison: Verlauf nachtragen</h2>\n<p>Damit die Kontostände stimmen, muss alles seit Saisonbeginn eingetragen sein. Das ist eine einmalige Arbeit — danach trägst du nur noch Neues ein.</p>\n<ol>\n<li><strong>Transfers:</strong> Kopiere alle Transfernews aus Comunio und füge sie ein. Schon ein fehlender Transfer macht den Kontostand dieses Teams falsch.</li>\n<li><strong>Punkteprämie:</strong> Trage die Punkte jeder Woche ein. Kennst du nur die aktuellen Gesamtpunkte, kannst du sie mit der Option „Gesamtpunkte“ auf einmal eintragen.</li>\n<li><strong>Platzierungsprämie:</strong> Wenn dein Liga-Admin eine wöchentliche Prämie zahlt, trage die Prämientabelle und die Platzierungen der vergangenen Wochen ein.</li>\n<li><strong>Teamwerte:</strong> Trage den aktuellen Teamwert aller Teams ein.</li>\n</ol>\n<p class=\"note\"><strong>Kontrolliere es:</strong> Vergleiche den Kontostand deines eigenen Teams in der Übersicht mit deinem Kontostand im Spiel. Stimmen beide überein, sind deine Einträge korrekt. Wenn nicht, fehlt ein Transfer, ein Punkteeintrag oder eine Prämie oder wurde doppelt eingetragen. Das ist auch in den folgenden Wochen die beste Kontrolle.</p>\n\n<h2>3. Wöchentliche Routine</h2>\n<ul>\n<li><strong>Wenn Transfers passieren:</strong> Füge die neuen Transfernews ein.</li>\n<li><strong>Am Ende der Woche:</strong> Trage die Punkte der Woche und, falls vorhanden, die Platzierungsprämie ein.</li>\n<li><strong>Bevor du bietest:</strong> Aktualisiere die Teamwerte und schau dir dann in der Übersicht die maximalen Gebote deiner Gegner an.</li>\n</ul>\n\n<h2>4. Die Tabs</h2>\n<h3>Übersicht</h3>\n<p>Aktueller Kontostand, Teamwert und maximales Gebot jedes Teams. Tippe auf ein Team, um alle Kontobewegungen seit Saisonbeginn zu sehen. Warnungen für Teams im Minus und veraltete Teamwerte erscheinen hier. Du kannst alle Bewegungen auch als Datei herunterladen, die sich in Excel öffnen lässt.</p>\n<h3>Teamwerte</h3>\n<p>Trage die Teamwerte ein. Sie ändern sich im Spiel ständig, gewöhn dir also an, sie vor dem Bieten zu aktualisieren.</p>\n<h3>Transfers</h3>\n<p>Füge den Text ein und tippe auf <strong>Text auslesen</strong>. Vor dem Speichern erscheint eine Vorschau — prüfe die Zahlen und korrigiere sie bei Bedarf. Ein bereits eingetragener Transfer wird als „mögliches Duplikat“ markiert und nicht gespeichert. Der Transfertext kann auf Türkisch, Englisch oder Deutsch sein.</p>\n<ul>\n<li>Tippe auf die Spaltenköpfe, um die Tabelle wie in Excel zu sortieren und zu filtern.</li>\n<li>Wähle oben eine Team-Schaltfläche, um alle Käufe und Verkäufe dieses Teams samt Gesamtsumme zu sehen.</li>\n<li>Taucht ein Name auf, der nicht in deiner Teamliste steht, erscheint oben eine Warnung, über die du ihn dem richtigen Team zuordnen kannst.</li>\n</ul>\n<h3>Punkteprämie</h3>\n<p>Im Spiel gibt es für jeden Punkt 10.000 aufs Konto. Trage die Punkte aller Teams in die Tabelle ein. Bei „Punkte dieser Woche“ werden die Punkte zur Summe addiert. Bei „Gesamtpunkte“ wird nur die Differenz zum letzten Eintrag gezählt, also nichts doppelt.</p>\n<h3>Platzierungsprämie</h3>\n<p>Das ist keine Spielregel. In manchen Ligen zahlt der Admin je nach Wochenplatzierung zusätzliches Geld. Wenn deine Liga das macht, schalte diesen Tab ein, trage die Prämientabelle ein und ziehe die Teams jede Woche in die richtige Reihenfolge.</p>\n<h3>Liga einrichten</h3>\n<p>Teams hinzufügen, umbenennen (✎) und löschen, Ligaregeln, Backups und Liga löschen.</p>\n\n<h2>5. Wie wird das maximale Gebot berechnet?</h2>\n<p class=\"formula\">Maximales Gebot = aktueller Kontostand + 25 % des Teamwerts</p>\n<p>Beispiel: Hat ein Team einen Kontostand von 5.000.000 und einen Teamwert von 80.000.000, kann es höchstens 5.000.000 + 20.000.000 = <strong>25.000.000</strong> bieten. Verwendet deine Liga die Regel „Kein Minus erlaubt“, ist das maximale Gebot einfach der aktuelle Kontostand.</p>\n<p><strong>Beachte:</strong></p>\n<ul>\n<li>Verkauft ein Gegner einen Spieler <strong>an ein anderes Team</strong>, kommt das Geld sofort an und sein maximales Gebot steigt sofort. Verkäufe an den Computer werden erst am nächsten Tag verbucht.</li>\n<li>Sind die Teamwerte veraltet, stimmt auch die Berechnung nicht.</li>\n</ul>\n\n<h2>6. Wichtige Hinweise</h2>\n<ul>\n<li><strong>Minus:</strong> Ein Team, das beim Anpfiff des ersten Spiels der Woche im Minus ist, bekommt in dieser Woche 0 Punkte. Teams im Minus sind in der Übersicht rot markiert.</li>\n<li><strong>Mach Backups:</strong> Liga einrichten → Backup → <strong>Backup herunterladen</strong>. Vor allem vor größeren Änderungen.</li>\n<li><strong>Bearbeite nicht gleichzeitig auf zwei Geräten:</strong> Die zuletzt gespeicherte Änderung gilt, die auf dem anderen Gerät kann verloren gehen.</li>\n</ul>\n\n<h2>7. Häufige Fragen</h2>\n<h3>Mein Kontostand in der Übersicht stimmt nicht mit dem Spiel überein.</h3>\n<p>Vielleicht fehlt ein Transfer oder wurde doppelt eingetragen, oder es fehlen die Punkte oder die Prämie einer Woche. Wähle im Tab „Transfers“ dein eigenes Team und vergleiche die Liste mit den News im Spiel.</p>\n<h3>Ich habe einen falschen Transfer eingetragen.</h3>\n<p>Lösche ihn mit dem ✕ am Ende seiner Zeile in der Transfertabelle und trage dann den richtigen ein.</p>\n<h3>Können die anderen Spieler meiner Liga meine Einträge sehen?</h3>\n<p>Nein. Deine Einträge liegen nur in deinem Konto.</p>\n<h3>Ein Spieler hat sein Team umbenannt.</h3>\n<p>Tippe unter „Liga einrichten“ neben dem Team auf ✎ und gib den neuen Namen ein. Alle früheren Einträge übernehmen den neuen Namen.</p>\n<h3>Die App fragt beim Öffnen nicht nach meinem Passwort.</h3>\n<p>Das ist normal. Wenn du dich einmal auf einem Gerät angemeldet hast, bleibst du angemeldet, bis du im linken Menü auf <strong>Abmelden</strong> tippst.</p>\n<h3>Ändert das ÇETELE-Passwort mein Gmail-Passwort?</h3>\n<p>Nein. Das ÇETELE-Passwort dient nur zur Anmeldung in dieser App. Dein Gmail-Konto und dein Passwort bleiben völlig unberührt.</p>\n<h3>Ich habe einen Fehler gefunden oder eine Idee.</h3>\n<p>Tippe unten im linken Menü auf <strong>Feedback senden</strong>. Deine Nachricht kommt direkt bei uns an.</p>\n"};
 function renderGuide(){
-  const wrap = el(`<article class="card guide">
+  if (LANG !== 'tr' && GUIDE_HTML[LANG]) return el(`<article class="card guide" data-no-tr>${GUIDE_HTML[LANG]}</article>`);
+  const wrap = el(`<article class="card guide" data-no-tr>
 <h1>ÇETELE Kullanma Kılavuzu</h1>
 <p class="lead">ÇETELE, Comunio liginde rakiplerinin bütçesini takip etmeni ve bir oyuncu için kimin en fazla ne kadar teklif verebileceğini görmeni sağlar. Kayıtların sadece sana aittir, ligdeki diğer oyuncular dahil kimse göremez.</p>
 
@@ -1220,7 +1306,7 @@ function renderGuide(){
 <h3>Kadro Değerleri</h3>
 <p>Takımların kadro değerlerini gir. Değerler oyunda sürekli değiştiği için teklif vermeden önce güncellemeyi alışkanlık yap.</p>
 <h3>Transferler</h3>
-<p>Metni yapıştırıp <strong>Metni ayrıştır</strong>'a bas. Kaydetmeden önce bir önizleme tablosu çıkar, rakamları kontrol et, gerekirse düzelt. Daha önce girilmiş bir transfer "olası mükerrer" olarak işaretlenir ve kaydedilmez.</p>
+<p>Metni yapıştırıp <strong>Metni ayrıştır</strong>'a bas. Kaydetmeden önce bir önizleme tablosu çıkar, rakamları kontrol et, gerekirse düzelt. Daha önce girilmiş bir transfer "olası mükerrer" olarak işaretlenir ve kaydedilmez. Transfer metni Türkçe, İngilizce ya da Almanca olabilir.</p>
 <ul>
 <li>Tablodaki sütun başlıklarına dokunarak sıralayabilir ve Excel'deki gibi filtreleyebilirsin.</li>
 <li>Üstteki takım düğmelerinden birini seçersen o takımın tüm alış ve satışları listelenir, toplam bedel de görünür.</li>
@@ -1301,12 +1387,7 @@ function renderKurulum(){
     <div class="card">
       <h2>Takımlar</h2>
       <div class="sub">Ligdeki tüm takımların gerçek isimleri (market/bot hesabı hariç)</div>
-      <div class="name-note">
-        <strong>⚠ Takım adlarını oyundakiyle aynı yaz.</strong> Transferler, oyundan kopyaladığın metindeki takım adlarına göre eşleştirilir.
-        En güvenlisi adları Comunio'daki sıralama ekranından <strong>kopyalayıp yapıştırmak</strong>.
-        Büyük/küçük harf farkı ve fazladan boşluklar (örneğin kelimeler arasında çift boşluk) sorun olmaz. Ama yazım farkı olursa farklı takım sayılır ve o transferler bütçeye yansımaz: kelimelerin bitişik yazılması ("Kara Kartal" ile "KaraKartal") ya da bir harfin farklı olması ("Yıldız FC" ile "Yildiz FC") gibi.
-        Böyle bir durumda Transferler sekmesinde uyarı çıkar. Bir oyuncu takımının adını oyunda değiştirirse buradan ✎ ile adını güncelle.
-      </div>
+      <div class="name-note">${$t('@nameNote')}</div>
       <div id="team-list"></div>
       <div class="row" style="margin-top:10px;">
         <input id="new-team" placeholder="Takım adı ekle...">
@@ -1325,15 +1406,15 @@ function renderKurulum(){
         <button class="icon-btn del" style="flex:0 0 auto;" title="Sil">✕</button>
       </div>`);
       row.querySelector('.ren').onclick = async () => {
-        const nn = await showPrompt(`"${t}" için yeni ad (geçmiş kayıtlar da güncellenir):`, t);
+        const nn = await showPrompt($t('"{name}" için yeni ad (geçmiş kayıtlar da güncellenir):', { name: t }), t);
         if (!nn || nn === t) return;
         if (lg.teams.some((x, j) => j !== i && normName(x) === normName(nn))) { toast('Bu adda bir takım zaten var.'); return; }
         renameTeam(lg, t, nn);
         await persist();
-        toast(`"${t}" artık "${nn}".`);
+        toast($t('"{old}" artık "{name}".', { old: t, name: nn }));
       };
       row.querySelector('.del').onclick = async () => {
-        const ok = await showConfirm(`"${t}" takımını silmek istediğine emin misin? Bu takıma ait geçmiş veriler ledger'da kalır ama hesaplamalarda görünmez.`);
+        const ok = await showConfirm($t('"{name}" takımını silmek istediğine emin misin? Bu takıma ait geçmiş kayıtlar silinmez ama hesaplamalarda görünmez.', { name: t }));
         if (!ok) return;
         lg.teams.splice(i, 1);
         await persist();
@@ -1386,7 +1467,7 @@ function renderDeleteLeagueCard(lg){
   const card = el(`
     <div class="card danger-card">
       <h2>Ligi sil</h2>
-      <div class="sub">"${escapeHtml(lg.name)}" ligi ve içindeki tüm kayıtlar (transferler, puanlar, bonuslar, kadro değerleri) kalıcı olarak silinir. Bu işlem geri alınamaz. Emin değilsen önce yedek indir.</div>
+      <div class="sub">${$t('"{name}" ligi ve içindeki tüm kayıtlar (transferler, puanlar, bonuslar, kadro değerleri) kalıcı olarak silinir. Bu işlem geri alınamaz. Emin değilsen önce yedek indir.', { name: escapeHtml(lg.name) })}</div>
       <button class="danger del-league" style="flex:0 0 auto;">Bu ligi sil</button>
     </div>
   `);
@@ -1398,8 +1479,8 @@ function openDeleteLeagueModal(lg){
   const overlay = el(`<div class="overlay"></div>`);
   const modal = el(`
     <div class="modal" style="max-width:440px;">
-      <h3>"${escapeHtml(lg.name)}" silinsin mi?</h3>
-      <p class="sub" style="margin-top:-6px;">Ligdeki ${(lg.transfers || []).length} transfer ve diğer tüm kayıtlar kalıcı olarak silinecek. Onaylamak için lig adını aşağıya aynen yaz.</p>
+      <h3>${$t('"{name}" silinsin mi?', { name: escapeHtml(lg.name) })}</h3>
+      <p class="sub" style="margin-top:-6px;">${$t('Ligdeki {n} transfer ve diğer tüm kayıtlar kalıcı olarak silinecek. Onaylamak için lig adını aşağıya aynen yaz.', { n: (lg.transfers || []).length })}</p>
       <div class="field"><input class="confirm-name" placeholder="${escapeHtml(lg.name)}" autocomplete="off"></div>
       <div class="row">
         <button class="cancel" style="flex:1;">Vazgeç</button>
@@ -1430,7 +1511,7 @@ function openDeleteLeagueModal(lg){
     }
     state.tab = 'kurulum';
     recompute(); render();
-    toast(`"${lg.name}" silindi.`);
+    toast($t('"{name}" silindi.', { name: lg.name }));
   };
 }
 
@@ -1460,13 +1541,13 @@ function renderBackupCard(){
   if (isCloud && localDb) {
     localLeagues().then(locals => {
       if (!locals.length) return;
-      const b = el(`<button class="bk-mig" style="flex:0 0 auto;">Bu cihazdaki ${locals.length} yerel ligi hesabıma aktar</button>`);
+      const b = el(`<button class="bk-mig" style="flex:0 0 auto;">${$t('Bu cihazdaki {n} yerel ligi hesabıma aktar', { n: locals.length })}</button>`);
       b.onclick = async () => {
         const ok = await showConfirm('Bu cihazda giriş yapmadan girdiğin ligler hesabına aktarılsın mı? Hesabında aynı lig varsa üzerine yazılır.', 'Aktar', false);
         if (!ok) return;
         const n = await migrateLocalToCloud();
         await loadAndRender();
-        toast(`${n} lig hesabına aktarıldı.`);
+        toast($t('{n} lig hesabına aktarıldı.', { n }));
       };
       card.querySelector('.row').appendChild(b);
     }).catch(() => {});
@@ -1491,7 +1572,7 @@ function renderBackupCard(){
     if (!payload || payload.app !== 'cetele' || !Array.isArray(payload.leagues)) { toast('Bu bir ÇETELE yedek dosyası değil.'); return; }
     const existing = new Set((await listLeagues()).map(l => l.id));
     const overwrite = payload.leagues.filter(l => existing.has(l.id)).length;
-    const ok = await showConfirm(`${payload.leagues.length} lig yüklenecek${overwrite ? `, bunlardan ${overwrite} tanesi bu cihazdaki aynı ligin üzerine yazılacak` : ''}. Devam edilsin mi?`, 'Geri yükle', false);
+    const ok = await showConfirm(overwrite ? $t('{n} lig yüklenecek, bunlardan {k} tanesi aynı ligin üzerine yazılacak. Devam edilsin mi?', { n: payload.leagues.length, k: overwrite }) : $t('{n} lig yüklenecek. Devam edilsin mi?', { n: payload.leagues.length }), 'Geri yükle', false);
     if (!ok) return;
     for (const l of payload.leagues) {
       if (!l || !l.id) continue;
@@ -1518,7 +1599,7 @@ function renderTransferler(){
       <div class="sub">${sampleFn ? 'Ekran görüntüsünü ya da metni yapıştır — kaydetmeden önce bir önizleme tablosunda kontrol edersin.' : 'Comunio\'nun transfer haberlerindeki metni kopyalayıp yapıştır. Birden fazla haberi tek seferde yapıştırabilirsin; kaydetmeden önce önizleme tablosunda kontrol edersin.'}</div>
       <div class="intake"></div>
       <div class="field" style="margin-top:14px;">
-        <label>${sampleFn ? 'ya da transfer metnini yapıştır' : 'Transfer metni'} (İngilizce ya da Türkçe format)</label>
+        <label>${sampleFn ? $t('ya da transfer metnini yapıştır (Türkçe, İngilizce ya da Almanca)') : $t('Transfer metni (Türkçe, İngilizce ya da Almanca)')}</label>
         <textarea id="paste-area" rows="4" placeholder="Marco Asensio transfers for 60,000,000 from Computer to Kara Kartal."></textarea>
       </div>
       <button id="parse-text-btn">Metni ayrıştır</button>
@@ -1550,7 +1631,7 @@ function renderTransferler(){
     const list = warn.querySelector('.unk-list');
     [...unknown.entries()].forEach(([nm, cnt]) => {
       const row = el(`<div class="row" style="align-items:center;margin-bottom:8px;">
-        <div style="flex:2;min-width:160px;"><strong></strong> <span class="small muted">(${cnt} transfer)</span></div>
+        <div style="flex:2;min-width:160px;"><strong></strong> <span class="small muted">${$t('({n} transfer)', { n: cnt })}</span></div>
         <select style="flex:2;"><option value="">— takım seç —</option>${lg.teams.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('')}</select>
         <button style="flex:0 0 auto;">Bağla</button>
       </div>`);
@@ -1564,7 +1645,7 @@ function renderTransferler(){
           if (normName(tr.to) === n) tr.to = target;
         });
         await persist();
-        toast(`"${nm}" adı ${target} takımına bağlandı.`);
+        toast($t('"{name}" adı {team} takımına bağlandı.', { name: nm, team: target }));
       };
       list.appendChild(row);
     });
@@ -1635,7 +1716,7 @@ function renderTransferTable(host){
   const rows = applyTrView(all, v, null);
   const total = rows.reduce((a, r) => a + r.amount, 0);
   const anyActive = v.teams.length || ['player', 'from', 'to', 'amount'].some(c => isColFiltered(v, c)) || v.sortKey !== 'addedAt';
-  const summary = el(`<div class="summary-line"><span><strong style="color:var(--text);">${rows.length}</strong> / ${all.length} transfer gösteriliyor, toplam bedel <strong class="num" style="color:var(--text);">${fmt(total)} €</strong></span></div>`);
+  const summary = el(`<div class="summary-line"><span>${$t('<strong>{n}</strong> / {all} transfer gösteriliyor, toplam bedel <strong class="num">{sum}</strong>', { n: rows.length, all: all.length, sum: fmt(total) })}</span></div>`);
   if (anyActive) {
     const reset = el(`<button class="ghost small" style="color:var(--accent);">Filtreleri ve sıralamayı sıfırla</button>`);
     reset.onclick = () => {
@@ -1684,7 +1765,7 @@ function openColumnMenu(anchor, col, host){
   closeMenu();
   const lg = state.current;
   const v = state.trView;
-  const menu = el(`<div class="colmenu" role="dialog" aria-label="${col.label} sütunu"></div>`);
+  const menu = el(`<div class="colmenu" role="dialog" aria-label="${$t('{col} sütunu', { col: $t(col.label) })}"></div>`);
   const asc = el(`<button class="menu-item">${col.num ? 'Küçükten büyüğe sırala' : 'A → Z sırala'}</button>`);
   const desc = el(`<button class="menu-item">${col.num ? 'Büyükten küçüğe sırala' : 'Z → A sırala'}</button>`);
   asc.onclick = () => { v.sortKey = col.key; v.sortDir = 'asc'; renderTransferTable(host); };
@@ -1780,21 +1861,23 @@ function openColumnMenu(anchor, col, host){
 function parseTransferText(text){
   const results = [];
   if (!text) return results;
-  const flat = text.replace(/\r/g,'');
-
-  // Format A: "Player transfers for 1,234,567 from A to B."
-  const reA = /([A-Za-zÇĞİÖŞÜçğıöşü0-9'’.\-\s]+?)\s+transfers\s+for\s+([\d.,]+)\s+from\s+([A-Za-zÇĞİÖŞÜçğıöşü0-9'’.\-\s]+?)\s+to\s+([A-Za-zÇĞİÖŞÜçğıöşü0-9'’.\-\s]+?)\s*[\.\n]/gi;
-  let m;
-  while ((m = reA.exec(flat + '\n')) !== null) {
-    results.push({ player: m[1].trim(), amount: parseAmount(m[2]), from: m[3].trim(), to: m[4].trim() });
-  }
-  if (results.length) return results;
-
-  // Format B (Turkish native): "Player 1.234.567 bonservis bedeli ile A'dan/A'den B'a/B'e transfer oldu."
-  const reB = /([A-Za-zÇĞİÖŞÜçğıöşü0-9'’.\-\s]+?)\s+([\d.,]+)\s+bonservis bedeli ile\s+([A-Za-zÇĞİÖŞÜçğıöşü0-9\-\s]+?)['’](?:dan|den|tan|ten)\s+([A-Za-zÇĞİÖŞÜçğıöşü0-9\-\s]+?)['’](?:a|e|ya|ye)?\s*transfer oldu/gi;
-  while ((m = reB.exec(flat)) !== null) {
-    results.push({ player: m[1].trim(), amount: parseAmount(m[2]), from: m[3].trim(), to: m[4].trim() });
-  }
+  const N = "[A-Za-zÇĞİÖŞÜçğıöşüÄäÖöÜüß0-9'’.\\- ]";
+  const formats = [
+    // English: "Player transfers for 1,234,567 from A to B."
+    new RegExp('^\\s*(' + N + '+?)\\s+transfers\\s+for\\s+([\\d.,]+)\\s+from\\s+(' + N + '+?)\\s+to\\s+(' + N + '+?)\\s*\\.?\\s*$', 'i'),
+    // German: "Player wechselt für 1.234.567 von A zu B."
+    new RegExp('^\\s*(' + N + '+?)\\s+wechselt\\s+für\\s+([\\d.,]+)\\s+von\\s+(' + N + '+?)\\s+zu\\s+(' + N + '+?)\\s*\\.?\\s*$', 'i'),
+    // Turkish: "Player 1.234.567 bonservis bedeli ile A'dan B'a transfer oldu."
+    new RegExp("^\\s*(?:\\d{1,2}:\\d{2}\\s*-\\s*)?(" + N + "+?)\\s+([\\d.,]+)\\s+bonservis bedeli ile\\s+(" + N + "+?)['’](?:dan|den|tan|ten)\\s+(" + N + "+?)['’](?:a|e|ya|ye)?\\s*transfer oldu\\.?\\s*$", 'i'),
+  ];
+  const clean = x => x.trim().replace(/^\d{1,2}:\d{2}\s*-\s*/, '');
+  text.replace(/\r/g, '').split('\n').forEach(line => {
+    if (!line.trim()) return;
+    for (const re of formats) {
+      const m = line.match(re);
+      if (m) { results.push({ player: clean(m[1]), amount: parseAmount(m[2]), from: m[3].trim(), to: m[4].trim() }); break; }
+    }
+  });
   return results;
 }
 
@@ -1806,8 +1889,9 @@ async function handleScreenshotUpload(files){
   const close = showBusy('Transfer görüntüsü okunuyor…');
   try {
     const prompt = `Bu görsel(ler), bir fantezi futbol ligi (Comunio) oyununun transfer bildirim ekranı. Görselde geçen HER transfer satırını eksiksiz çıkar.
-Her satır iki formattan birinde olabilir:
+Her satır üç formattan birinde olabilir:
 1) "PlayerName transfers for 1,234,567 from A to B."
+3) Almanca: "PlayerName wechselt für 1.234.567 von A zu B."
 2) Türkçe: "PlayerName 1.234.567 bonservis bedeli ile A'dan B'a transfer oldu." (başında "04:33 -" gibi bir saat olabilir, onu yok say)
 Yalnızca şu JSON dizisini döndür, başka metin yazma:
 [{"player": "...", "amount": 1234567, "from": "...", "to": "..."}]
@@ -1977,7 +2061,7 @@ function openStandingsModal(rows, purpose){
     if (!chosen.length) { toast('Kaydedilecek satır seçilmedi.'); return; }
     const seen = new Set();
     for (const r of chosen) {
-      if (seen.has(r.team)) { toast(`"${r.team}" birden fazla satırda seçili.`); return; }
+      if (seen.has(r.team)) { toast($t('"{name}" birden fazla satırda seçili.', { name: r.team })); return; }
       seen.add(r.team);
     }
     const parts = [];
@@ -1991,7 +2075,7 @@ function openStandingsModal(rows, purpose){
         lg.pointsLog.push({ id: uid(), team: r.team, mode: opt.mode, value: v, label: opt.label, addedAt: new Date(base + i).toISOString() });
         n++;
       });
-      if (n) parts.push(`${n} takımın puanı işlendi`);
+      if (n) parts.push($t('{n} takımın puanı işlendi', { n }));
     }
     const squadBox = modal.querySelector('#sm-squad');
     const doSquad = isPoints ? !!(squadBox && squadBox.checked) : true;
@@ -1999,22 +2083,22 @@ function openStandingsModal(rows, purpose){
       lg.squadValues = lg.squadValues || {};
       let n = 0;
       chosen.forEach(r => { if (r.squad != null) { lg.squadValues[r.team] = { value: r.squad, updatedAt: nowIso() }; n++; } });
-      if (n) parts.push(`${n} kadro değeri güncellendi`);
+      if (n) parts.push($t('{n} kadro değeri güncellendi', { n }));
     }
     const rankBox = modal.querySelector('#sm-rank');
     if (rankBox && rankBox.checked) {
       const ranking = [...new Set(model.filter(r => r.team).map(r => r.team))];
       if (ranking.length !== lg.teams.length) {
-        parts.push('sıralama bonusu kaydedilmedi (tüm takımlar eşleşmeli)');
+        parts.push($t('sıralama bonusu kaydedilmedi (tüm takımlar eşleşmeli)'));
       } else {
         lg.adminBonusLog = lg.adminBonusLog || [];
         lg.adminBonusLog.push({ id: uid(), ranking, label: opt.label, addedAt: nowIso() });
-        parts.push('sıralama bonusu kaydedildi');
+        parts.push($t('sıralama bonusu kaydedildi'));
       }
     }
     overlay.remove();
     await persist();
-    toast(parts.length ? parts.join(', ') + '.' : 'Değişiklik yapılmadı.');
+    toast(parts.length ? parts.join(', ') + '.' : $t('Değişiklik yapılmadı.'));
   };
   overlay.appendChild(modal);
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
@@ -2036,7 +2120,7 @@ function openPreviewModal(parsedRows){
   const overlay = el(`<div class="overlay"></div>`);
   const modal = el(`
     <div class="modal">
-      <h3>Transfer Önizlemesi (${rows.length} satır)</h3>
+      <h3>${$t('Transfer önizlemesi ({n} satır)', { n: rows.length })}</h3>
       <p class="sub" style="margin-top:-8px;">Mükerrer olabilecek satırlar işaretlendi ve varsayılan olarak devre dışı bırakıldı. Kaydetmeden önce gözden geçir.</p>
       <div style="overflow-x:auto;">
         <table class="data preview-table">
@@ -2092,7 +2176,7 @@ function openPreviewModal(parsedRows){
     if (!toAdd.length) { toast('Kaydedilecek satır seçilmedi.'); return; }
     const unknown = [...new Set(toAdd.flatMap(r => [r.from, r.to]).filter(nm => canonName(lg, nm) === null).map(nm => nm.trim()))];
     if (unknown.length) {
-      const ok = await showConfirm(`Şu adlar takım listesinde yok: ${unknown.join(', ')}. Bu adların geçtiği transferler bütçeye yansımaz (yazım farkı olabilir). Yine de kaydedilsin mi?`, 'Yine de kaydet', false);
+      const ok = await showConfirm($t('Şu adlar takım listesinde yok: {names}. Bu adların geçtiği transferler bütçeye yansımaz (yazım farkı olabilir). Yine de kaydedilsin mi?', { names: unknown.join(', ') }), 'Yine de kaydet', false);
       if (!ok) return;
     }
     lg.transfers = lg.transfers || [];
@@ -2104,7 +2188,7 @@ function openPreviewModal(parsedRows){
     });
     overlay.remove();
     await persist();
-    toast(`${toAdd.length} transfer kaydedildi.`);
+    toast($t('{n} transfer kaydedildi.', { n: toAdd.length }));
   };
   overlay.appendChild(modal);
   overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
@@ -2116,7 +2200,7 @@ function renderBulkPoints(lg){
   const card = el(`
     <div class="card">
       <h2>Haftalık puanları gir</h2>
-      <div class="sub">Tüm takımların puanını tek tabloda gir. Puan başına ${fmt(lg.pointBonusPerPoint)} — oyunun sabit kuralı. Kadro değeri girersen maksimum teklif hesabı da güncellenir.</div>
+      <div class="sub">${$t('Tüm takımların puanını tek tabloda gir. Puan başına {n} — oyunun sabit kuralı. Kadro değeri girersen maksimum teklif hesabı da güncellenir.', { n: fmt(lg.pointBonusPerPoint) })}</div>
       <div class="grid2">
         <div class="field"><label>Etiket (örn. "3. hafta")</label><input class="bl-label" placeholder="opsiyonel"></div>
         <div class="field"><label>Girdiğin puan</label>
@@ -2158,7 +2242,7 @@ function renderBulkPoints(lg){
     const dups = withPts.filter(e => log.some(p => p.team === e.team && p.mode === mode && p.value === e.pts && (p.label || '') === label)
       || (mode === 'cumulative' && log.some(p => p.team === e.team) && currentCumulative(lg, e.team) === e.pts));
     if (dups.length) {
-      const ok = await showConfirm(`${dups.map(d => d.team).join(', ')} için aynı puan daha önce girilmiş görünüyor. Yine de kaydedilsin mi?`, 'Yine de kaydet', false);
+      const ok = await showConfirm($t('{names} için aynı puan daha önce girilmiş görünüyor. Yine de kaydedilsin mi?', { names: dups.map(d => d.team).join(', ') }), 'Yine de kaydet', false);
       if (!ok) return;
     }
     lg.pointsLog = log;
@@ -2168,8 +2252,8 @@ function renderBulkPoints(lg){
     withSq.forEach(e => { lg.squadValues[e.team] = { value: e.sq, updatedAt: nowIso() }; });
     await persist();
     const parts = [];
-    if (withPts.length) parts.push(`${withPts.length} takımın puanı işlendi`);
-    if (withSq.length) parts.push(`${withSq.length} kadro değeri güncellendi`);
+    if (withPts.length) parts.push($t('{n} takımın puanı işlendi', { n: withPts.length }));
+    if (withSq.length) parts.push($t('{n} kadro değeri güncellendi', { n: withSq.length }));
     toast(parts.join(', ') + '.');
   };
   return card;
@@ -2195,7 +2279,7 @@ function renderPuanlar(){
     <div class="card"><details>
       <summary>Elle puan ekle</summary>
       <div style="height:12px;"></div>
-      <div class="sub">Puan başına ${fmt(lg.pointBonusPerPoint)} — oyunun sabit kuralı. "Bu haftanın puanı" girersen mevcut toplama eklenir; "Toplam (kümülatif) puan" girersen sistem otomatik olarak farkı hesaplayıp sadece o farkı ödüllendirir (çift sayım olmaz).</div>
+      <div class="sub">${$t('Puan başına {n} — oyunun sabit kuralı. "Bu haftanın puanı" girersen mevcut toplama eklenir; "Toplam puan" girersen sadece önceki kayıttan farkı işlenir, çift sayılmaz.', { n: fmt(lg.pointBonusPerPoint) })}</div>
       <div class="grid2">
         <div class="field">
           <label>Takım</label>
@@ -2303,7 +2387,7 @@ function renderSiralama(){
     for (let i=0;i<n;i++){
       values.push(lg.adminBonusTable[i] != null ? lg.adminBonusTable[i] : '');
       const row = el(`<div class="row" style="align-items:center;margin-bottom:6px;">
-        <div style="flex:0 0 70px;font-weight:600;">${i+1}. sıra</div>
+        <div style="flex:0 0 70px;font-weight:600;">${$t('{n}. sıra', { n: i + 1 })}</div>
         <input class="num ab-input" data-i="${i}" value="${values[i]}" placeholder="tutar">
       </div>`);
       tableEl.appendChild(row);
@@ -2363,7 +2447,7 @@ function renderSiralama(){
     else sorted.forEach(entry => {
       const row = el(`<div class="card" style="background:var(--surface-2);margin-bottom:10px;">
         <div class="row" style="align-items:center;">
-          <div style="flex:1;font-weight:600;">${entry.label ? escapeHtml(entry.label) : new Date(entry.addedAt).toLocaleDateString('tr-TR')}</div>
+          <div style="flex:1;font-weight:600;">${entry.label ? escapeHtml(entry.label) : new Date(entry.addedAt).toLocaleDateString(LOC())}</div>
           <button class="icon-btn" title="Sil">✕</button>
         </div>
         <div class="small muted" style="margin-top:6px;">${entry.ranking.map((t,i)=>`${i+1}. ${escapeHtml(t)}`).join(' · ')}</div>
@@ -2407,11 +2491,11 @@ function renderKadro(){
   if (!lg.teams.length) { rows.appendChild(el(`<div class="empty">Önce Lig Kurulumu sekmesinden takım ekle.</div>`)); return wrap; }
   lg.teams.forEach(t => {
     const current = (lg.squadValues && lg.squadValues[t] && lg.squadValues[t].value) || '';
-    const updated = (lg.squadValues && lg.squadValues[t] && lg.squadValues[t].updatedAt) ? new Date(lg.squadValues[t].updatedAt).toLocaleDateString('tr-TR') : '—';
+    const updated = (lg.squadValues && lg.squadValues[t] && lg.squadValues[t].updatedAt) ? new Date(lg.squadValues[t].updatedAt).toLocaleDateString(LOC()) : '—';
     const row = el(`<div class="row" style="align-items:center;margin-bottom:8px;">
       <div style="flex:1;font-weight:600;">${escapeHtml(t)}</div>
       <input class="num sq-input" data-team="${escapeHtml(t)}" value="${current}" placeholder="kadro değeri" style="flex:1;">
-      <div class="small muted" style="flex:0 0 100px;">güncelleme: ${updated}</div>
+      <div class="small muted" style="flex:0 0 100px;">${$t('güncelleme: {d}', { d: updated })}</div>
     </div>`);
     rows.appendChild(row);
   });
@@ -2450,7 +2534,7 @@ function renderDashboard(){
   `);
   wrap.appendChild(summary);
   const tbody = summary.querySelector('tbody');
-  const sqDate = t => { const u = lg.squadValues && lg.squadValues[t] && lg.squadValues[t].updatedAt; return u ? new Date(u).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; };
+  const sqDate = t => { const u = lg.squadValues && lg.squadValues[t] && lg.squadValues[t].updatedAt; return u ? new Date(u).toLocaleString(LOC(), { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : ''; };
   const rows = lg.teams.map(t => ({ t, budget: c.budgets[t]||0, squad: c.squadValues[t]||0, max: c.maxBid[t]||0, updated: sqDate(t) }))
     .sort((a,b) => b.max - a.max);
   rows.forEach(r => {
@@ -2470,10 +2554,10 @@ function renderDashboard(){
   if (lg.negativeBudgetRule > 0) {
     const stamps = lg.teams.map(t => lg.squadValues && lg.squadValues[t] && lg.squadValues[t].updatedAt).filter(Boolean).sort();
     const missing = lg.teams.filter(t => !(lg.squadValues && lg.squadValues[t] && lg.squadValues[t].value));
-    const oldest = stamps.length ? new Date(stamps[0]).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
+    const oldest = stamps.length ? new Date(stamps[0]).toLocaleString(LOC(), { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null;
     const card = el(`<div class="card warn-card">
       <strong>⚠ Maks. teklif kadro değerine bağlı:</strong> Maksimum teklif = mevcut bütçe + kadro değerinin %25'i (takımın eksiye düşebileceği en fazla tutar). Yani sisteme işlenmiş kadro değeri doğrudan hesaba girer. Kadro değerleri oyunda sürekli değiştiği için en güncel değerler işlenmezse maksimum teklif yanlış hesaplanır.
-      <div class="small" style="margin-top:6px;">${missing.length ? `Kadro değeri girilmemiş takım: <strong>${missing.map(escapeHtml).join(', ')}</strong>. ` : ''}${oldest ? `En eski güncelleme: <strong>${oldest}</strong>.` : ''}</div>
+      <div class="small" style="margin-top:6px;">${missing.length ? $t('Kadro değeri girilmemiş takım: <strong>{names}</strong>.', { names: missing.map(escapeHtml).join(', ') }) + ' ' : ''}${oldest ? $t('En eski güncelleme: <strong>{d}</strong>.', { d: oldest }) : ''}</div>
       <button class="go-squad" style="margin-top:10px;">Kadro değerlerini güncelle</button>
     </div>`);
     card.querySelector('.go-squad').onclick = () => { state.tab = 'kadro'; render(); };
@@ -2511,7 +2595,7 @@ function openTeamDetail(team){
   const entries = c.ledger[team] || [];
   const modal = el(`
     <div class="modal">
-      <h3>${escapeHtml(team)} — Bütçe Geçmişi</h3>
+      <h3>${$t('{team} — Bütçe geçmişi', { team: escapeHtml(team) })}</h3>
       <div style="overflow-x:auto;">
         <table class="data">
           <thead><tr><th>Kalem</th><th class="amt">Etki</th><th class="amt">Bakiye</th></tr></thead>
