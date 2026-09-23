@@ -1871,13 +1871,22 @@ function parseTransferText(text){
     new RegExp("^\\s*(?:\\d{1,2}:\\d{2}\\s*-\\s*)?(" + N + "+?)\\s+([\\d.,]+)\\s+bonservis bedeli ile\\s+(" + N + "+?)['’](?:dan|den|tan|ten)\\s+(" + N + "+?)['’](?:a|e|ya|ye)?\\s*transfer oldu\\.?\\s*$", 'i'),
   ];
   const clean = x => x.trim().replace(/^\d{1,2}:\d{2}\s*-\s*/, '');
-  text.replace(/\r/g, '').split('\n').forEach(line => {
-    if (!line.trim()) return;
-    for (const re of formats) {
-      const m = line.match(re);
-      if (m) { results.push({ player: clean(m[1]), amount: parseAmount(m[2]), from: m[3].trim(), to: m[4].trim() }); break; }
+  // Text copied from the Comunio news page puts linked names (player, teams) on their own lines.
+  // For every line, take the shortest run of lines ending there that forms one complete transfer,
+  // so split lines are joined but separate transfers (or header lines above them) never merge.
+  const lines = text.replace(/\r/g, '').split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(Boolean);
+  const matchOne = str => { for (const re of formats) { const m = str.match(re); if (m) return m; } return null; };
+  let used = 0;
+  for (let end = 0; end < lines.length; end++) {
+    for (let start = end; start >= Math.max(used, end - 6); start--) {
+      const m = matchOne(lines.slice(start, end + 1).join(' '));
+      if (m) {
+        results.push({ player: clean(m[1]), amount: parseAmount(m[2]), from: m[3].trim(), to: m[4].trim() });
+        used = end + 1;
+        break;
+      }
     }
-  });
+  }
   return results;
 }
 
